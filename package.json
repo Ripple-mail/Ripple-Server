@@ -15,9 +15,9 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "dev": "NODE_ENV=development ts-node src/index.ts",
+    "dev": "ts-node src/index.ts",
     "build": "tsc",
-    "preview": "NODE_ENV=production node dist/index.js"
+    "preview": "node dist/index.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
@@ -32,6 +32,7 @@
     "typescript-eslint": "^8.32.1"
   },
   "dependencies": {
-    "config": "^4.0.0"
+    "config": "^4.0.0",
+    "dotenv": "^16.5.0"
   }
 }
