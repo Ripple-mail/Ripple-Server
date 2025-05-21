@@ -12,13 +12,16 @@
   },
   "license": "GPL-3.0-only",
   "author": "",
-  "type": "module",
+  "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "NODE_ENV=development ts-node src/index.ts",
+    "build": "tsc",
+    "preview": "NODE_ENV=production node dist/index.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
+    "@types/config": "^3.3.5",
     "@types/node": "^22.15.21",
     "eslint": "^9.27.0",
     "globals": "^16.1.0",
@@ -27,5 +30,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.1"
+  },
+  "dependencies": {
+    "config": "^4.0.0"
   }
 }
