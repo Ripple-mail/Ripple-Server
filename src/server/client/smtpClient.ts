@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import * as net from 'net';
-import { PORT } from '../../config/config';
+import { PORT, HOST } from '../../config/config';
 
 export class SMTPClient {
     socket: net.Socket;
@@ -10,12 +10,14 @@ export class SMTPClient {
     responses: string[] = [];
     responseResolver: ((val: string) => void) | null = null;
     host: string = '';
+    port: number;
 
-    constructor(host: string) {
+    constructor(options?: { port?: number, host?: string }) {
         this.socket = new net.Socket();
         this.socket.setEncoding('utf-8');
-        
-        this.host = host;
+
+        this.port = options?.port ? options.port : PORT;
+        this.host = options?.host ? options.host : HOST;
 
         this.socket.on('data', (data) => {
             this.buffer += data;
@@ -56,7 +58,7 @@ export class SMTPClient {
 
     async connect() {
         return new Promise<void>((resolve, reject) => {
-            this.socket.connect(PORT, this.host, async () => {
+            this.socket.connect(PORT, HOST, async () => {
                 try {
                     const greeting = await this.waitForResponse();
                     if (!greeting.startsWith('220')) {
@@ -113,13 +115,13 @@ export class SMTPClient {
 }
 
 async function run() {
-    const client = new SMTPClient('localhost');
+    const client = new SMTPClient();
     try {
         await client.connect();
         await client.sendMail(
-            'sender@example.com',
-            'recipient3@example.com',
-            `Subject: Test from SMTP client\r\nFrom: sender@example.com\r\nTo: recipient3@example.com\r\n\r\nHello from my SMTP client!\r\n`
+            'sender~example.com',
+            'recipient@example.com',
+            `Subject: Test from SMTP client\r\nFrom: sender~example.com\r\nTo: recipient~example.com\r\n\r\nHello from my SMTP client!\r\n`
         );
         console.log('Email sent successfully');
     } catch (error) {

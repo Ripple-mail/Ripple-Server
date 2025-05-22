@@ -17,7 +17,7 @@
   "scripts": {
     "dev": "ts-node src/index.ts",
     "build": "tsc",
-    "preview": "node dist/index.js"
+    "start": "node dist/index.js"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",

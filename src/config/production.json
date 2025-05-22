@@ -1,3 +1,4 @@
 {
-    "port": 25
+    "port": 25,
+    "host": "ripple.heggo.dev"
 }
