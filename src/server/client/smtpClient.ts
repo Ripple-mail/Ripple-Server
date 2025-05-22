@@ -112,6 +112,7 @@ export class SMTPClient {
     }
 }
 
+//* Sample usage
 async function run() {
     const client = new SMTPClient('localhost');
     try {
