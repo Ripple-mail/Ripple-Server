@@ -17,7 +17,9 @@
   "scripts": {
     "dev": "ts-node src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "format": "prettier --write .",
+    "lint": "prettier --check . && eslint"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
