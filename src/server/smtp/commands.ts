@@ -114,7 +114,7 @@ export async function handleCommand(session: SMTPSession, line: string) {
 				if (session.collectingData) {
 					if (line === '.') {
 						session.collectingData = false;
-						const message = session.dataLines.join('\r\n');
+						const message = `From: ${session.mailFrom}\nTo: ${session.rcptTo}\n${session.dataLines.join('\r\n')}`;
 
 						try {
 							await saveEmail(session.rcptTo, message);
