@@ -9,35 +9,35 @@ const mkdir = promisify(fs.mkdir);
 const writeFile = promisify(fs.writeFile);
 
 async function ensureMaildirStructure(userDir: string) {
-    for (const sub of ['tmp', 'new', 'cur']) {
-        const dir = path.join(userDir, sub);
-        if (!fs.existsSync(dir)) {
-            await mkdir(dir, { recursive: true });
-        }
-    }
+	for (const sub of ['tmp', 'new', 'cur']) {
+		const dir = path.join(userDir, sub);
+		if (!fs.existsSync(dir)) {
+			await mkdir(dir, { recursive: true });
+		}
+	}
 }
 
 function generateMailFilename(): string {
-    const timestamp = Date.now();
-    const random = crypto.randomBytes(6).toString('hex');
-    const pid = process.pid;
-    const hostname = require('os').hostname();
-    return `${timestamp}.${pid}.${hostname}.${random}`;
+	const timestamp = Date.now();
+	const random = crypto.randomBytes(6).toString('hex');
+	const pid = process.pid;
+	const hostname = require('os').hostname();
+	return `${timestamp}.${pid}.${hostname}.${random}`;
 }
 
 export async function saveEmail(recipient: string, data: string) {
-    const localPart = recipient.split(MAILDOMAINPREFIX)[0];
-    const userDir = path.join(MAILBOX_DIR, localPart);
+	const localPart = recipient.split(MAILDOMAINPREFIX)[0];
+	const userDir = path.join(MAILBOX_DIR, localPart);
 
-    await ensureMaildirStructure(userDir);
+	await ensureMaildirStructure(userDir);
 
-    const fileName = generateMailFilename();
-    const tmpPath = path.join(userDir, 'tmp', fileName);
-    const newPath = path.join(userDir, 'new', fileName);
+	const fileName = generateMailFilename();
+	const tmpPath = path.join(userDir, 'tmp', fileName);
+	const newPath = path.join(userDir, 'new', fileName);
 
-    await writeFile(tmpPath, data, 'utf-8');
+	await writeFile(tmpPath, data, 'utf-8');
 
-    fs.renameSync(tmpPath, newPath);
+	fs.renameSync(tmpPath, newPath);
 
-    console.log(`Saved email to ${newPath}`);
+	console.log(`Saved email to ${newPath}`);
 }

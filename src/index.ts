@@ -4,7 +4,7 @@ dotenv.config();
 import { startSMTPServer } from './server/smtp/smtpServer.ts';
 
 async function main() {
-    await startSMTPServer();
+	await startSMTPServer();
 }
 
 main();
