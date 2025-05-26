@@ -26,7 +26,7 @@ export async function startSMTPServer() {
 		});
 
 		socket.on('end', () => {
-			console.log(`Connected closed: ${socket}`);
+			console.log(`Connected closed.\nADDR (Remote | Local): ${socket.remoteAddress} | ${socket.localAddress}\nPORT (Remote | Local): ${socket.remotePort} | ${socket.localPort}\nBytes (WRITE | READ): ${socket.bytesWritten} | ${socket.bytesRead}\nErrored? ${socket.errored}`);
 		});
 
 		socket.on('error', (error) => {
