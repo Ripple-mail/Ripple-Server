@@ -1,6 +1,0 @@
-{
-    "watch": ["src/api"],
-    "ext": "ts,json",
-    "ignore": "dist",
-    "exec": "ts-node src/server/api/apiServer.ts"
-}
