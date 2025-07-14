@@ -2,9 +2,16 @@ import * as net from 'net';
 import { SMTPSession } from './session.ts';
 import { handleCommand } from './commands.ts';
 import { PORT } from '../../config/config.ts';
+import { smtpConnectionsTotal, smtpActiveConnections, smtpErrorsTotal, smtpUpSince, smtpCommandsTotal } from './metrics/metrics.ts';
 
 export async function startSMTPServer() {
+    // startSMTPMetricServer();
+    smtpUpSince.setToCurrentTime();
+
 	const server = net.createServer((socket) => {
+        smtpConnectionsTotal.inc();
+        smtpActiveConnections.inc();
+
 		const session = new SMTPSession(socket);
 		let buffer = '';
 
@@ -26,11 +33,17 @@ export async function startSMTPServer() {
 		});
 
 		socket.on('end', () => {
+            smtpActiveConnections.dec();
 			console.log(`Connected closed.\nADDR (Remote | Local): ${socket.remoteAddress} | ${socket.localAddress}\nPORT (Remote | Local): ${socket.remotePort} | ${socket.localPort}\nBytes (WRITE | READ): ${socket.bytesWritten} | ${socket.bytesRead}\nErrored? ${socket.errored}`);
 		});
 
 		socket.on('error', (error) => {
-			console.error('Socket error:', error);
+            smtpActiveConnections.dec();
+            smtpConnectionsTotal.dec();
+            if (error.stack === "ECONNRESET") {
+                smtpErrorsTotal.inc();
+			    console.error('Socket error:', error);
+            }
 		});
 	});
 

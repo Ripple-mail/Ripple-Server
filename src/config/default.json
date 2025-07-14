@@ -1,5 +1,8 @@
 {
 	"port": 2525,
 	"mailDomainPrefix": "~",
-	"host": "localhost"
+	"host": "localhost",
+    "smtp": {
+        "port": 2525
+    }
 }

@@ -1,12 +1,16 @@
 import { SMTPSession } from './session.ts';
 import { saveEmail } from '../storage/store.ts';
 import { MAILDOMAINPREFIX } from '../../config/config.ts';
+import { smtpCommandsTotal, smtpEmailsAcceptedTotal } from './metrics/metrics.ts';
 
 export async function handleCommand(session: SMTPSession, line: string) {
 	const [command, ...args] = line.split(' ');
 	const upperCommand = command.toUpperCase();
 
-	const sendResponse = (msg: string) => session.socket.write(msg);
+	const sendResponse = (msg: string) => {
+        session.socket.write(msg);
+        smtpCommandsTotal.inc({ command: upperCommand });
+    }
 
 	function exactAddress(argLine: string): string | null {
 		const match = argLine.match(/<([^>]*)>/);
@@ -119,6 +123,7 @@ export async function handleCommand(session: SMTPSession, line: string) {
 						try {
 							await saveEmail(session.rcptTo, message);
 							sendResponse('250 OK message accepted\r\n');
+                            smtpEmailsAcceptedTotal.inc();
 
 							session.mailFrom = '';
 							session.rcptTo = '';

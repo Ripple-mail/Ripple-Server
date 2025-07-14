@@ -114,8 +114,7 @@ export class SMTPClient {
 	}
 }
 
-//* Sample usage
-async function run() {
+/* async function run() {
 	const client = new SMTPClient();
 	try {
 		await client.connect();
@@ -133,4 +132,4 @@ async function run() {
 	}
 }
 
-run();
+run(); */

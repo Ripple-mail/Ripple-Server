@@ -15,7 +15,9 @@
 	"type": "commonjs",
 	"main": "index.js",
 	"scripts": {
-		"dev": "ts-node src/index.ts",
+		"dev": "nodemon",
+		"dev:api": "nodemon --config nodemon.api.json",
+		"dev:smtp": "nodemon --config nodemon.smtp.json",
 		"build": "tsc",
 		"start": "node dist/index.js",
 		"format": "prettier --write .",
@@ -25,9 +27,12 @@
 		"@eslint/js": "^9.27.0",
 		"@types/config": "^3.3.5",
 		"@types/node": "^22.15.21",
+		"@types/pg": "^8.15.4",
+		"drizzle-kit": "^0.31.1",
 		"eslint": "^9.27.0",
 		"globals": "^16.1.0",
 		"husky": "^9.1.7",
+		"nodemon": "^3.1.10",
 		"prettier": "^3.5.3",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.8.3",
@@ -35,6 +40,10 @@
 	},
 	"dependencies": {
 		"config": "^4.0.0",
-		"dotenv": "^16.5.0"
+		"dotenv": "^16.5.0",
+		"drizzle-orm": "^0.44.2",
+		"pg": "^8.16.2",
+		"postgres": "^3.4.7",
+		"prom-client": "^15.1.3"
 	}
 }

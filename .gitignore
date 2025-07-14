@@ -137,3 +137,8 @@ dist
 
 # Lock files
 package-lock.json
+
+# Email folder
+mailDir/
+
+drizzle/
