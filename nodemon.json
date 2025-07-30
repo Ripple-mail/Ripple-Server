@@ -1,6 +1,17 @@
 {
     "watch": ["src"],
     "ext": "ts,json",
-    "ignore": "dist",
-    "exec": "ts-node src/index.ts"
+    "ignore": [
+        "dist",
+        "node_modules",
+        ".git",
+        "drizzle",
+        ".husky"
+    ],
+    "env": {
+        "NODE_ENV": "development",
+        "NODE_CONFIG_DIR": "./src/config"
+    },
+    "delay": 200,
+    "exec": "ts-node --transpile-only --swc src/index.ts"
 }

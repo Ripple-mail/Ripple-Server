@@ -20,13 +20,14 @@
 		"dev:smtp": "nodemon --config nodemon.smtp.json",
 		"build": "tsc",
 		"start": "node dist/index.js",
-        "start:api": "node dist/server/api/apiServer.js",
-        "start:smtp": "node dist/server/smtp/smtpServer.js",
+		"start:api": "node dist/server/api/apiServer.js",
+		"start:smtp": "node dist/server/smtp/smtpServer.js",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint ."
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.27.0",
+		"@swc/core": "^1.13.3",
 		"@types/config": "^3.3.5",
 		"@types/node": "^22.15.21",
 		"@types/pg": "^8.15.4",
