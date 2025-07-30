@@ -6,17 +6,26 @@ import path from 'path';
 import fs from 'fs';
 import { metricsMiddleware, metricsEndpoint, updateFolderMetric, backendUpSince } from './metrics';
 import { setupWebSocket } from './socket/websocket';
+import { API_PORT } from '../../config/config';
 
 dotenv.config();
+const allowedOrigins = ['http://localhost:5173'];
 
 export async function startApiServer() {
     backendUpSince.setToCurrentTime();
 
     const app = express();
     app.use(cors({
-        origin: '*',
+        origin: function (origin, callback) {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         methods: ['GET', 'POST'],
-        allowedHeaders: ['Content-Type']
+        allowedHeaders: ['Content-Type'],
+        credentials: true
     }));
     app.use(express.json());
 
@@ -24,20 +33,32 @@ export async function startApiServer() {
 
     //* Load api routes dynamically
     const apiDir = path.join(__dirname, 'routes');
-    fs.readdirSync(apiDir).forEach(file => {
-        if (file.endsWith('.ts')) {
-            const routeName = '/' + file.replace(/\.ts$/, '');
-            const routeModule = require(path.join(apiDir, file));
-            const router = routeModule.default;
+    function loadRoutes(dir: string) {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
 
-            if (router) {
-                app.use(`/api${routeName}`, router);
-                console.log(`[Express] Loaded route: /api${routeName}`);
-            } else {
-                console.warn(`[Express] No default export in ${file}`);
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+
+            if (entry.isDirectory()) {
+                loadRoutes(fullPath);
+            } else if (entry.isFile() && entry.name.endsWith('.ts')) {
+                const relativePath = path.relative(apiDir, fullPath);
+                const routePath = relativePath.replace(/\.ts/, '').replace(/\\/g, '/');
+
+                const routeModule = require(fullPath);
+                const router = routeModule.default;
+
+                if (router) {
+                    app.use(`/api/${routePath}`, router);
+                    console.log(`[Express] Loading route: /api/${routePath}`);
+                } else {
+                    console.warn(`[Express] No default export in ${relativePath}`);
+                }
             }
         }
-    });
+    }
+
+    loadRoutes(apiDir);
 
     // Test
     app.get('/api/test', (req, res) => {
@@ -53,10 +74,9 @@ export async function startApiServer() {
     const server = http.createServer(app);
     setupWebSocket(server);
 
-    const PORT = 3001;
-    server.listen(PORT, () => {
-        console.log(`Server running at http://localhost:${PORT}`);
-        console.log(`Metrics running on http://localhost:${PORT}/metrics`);
+    server.listen(API_PORT, () => {
+        console.log(`Server running at http://localhost:${API_PORT}`);
+        console.log(`Metrics running on http://localhost:${API_PORT}/metrics`);
     });
 
     setInterval(updateFolderMetric, 10_000);

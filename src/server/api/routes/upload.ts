@@ -2,6 +2,8 @@ import express, { Router } from 'express';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { db } from '../../../../db/db';
+import { attachments } from '../../../../db/schema';
 
 const FILES_DIR = path.join(__dirname, '../files');
 const TEMP_DIR = path.join(FILES_DIR, './temp');
@@ -13,7 +15,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/', upload.single('file'), async (req, res) => {
     try {
-        const { uploadId, chunkIndex, totalChunks, fileType } = req.body;
+        const { uploadId, chunkIndex, totalChunks, fileType, fileName } = req.body;
 
         if (!uploadId || !req.file || chunkIndex === undefined || !totalChunks) {
             return res.status(400).json({ status: 'error', error: 'Missing required fields.' });
@@ -39,11 +41,22 @@ router.post('/', upload.single('file'), async (req, res) => {
             writeStream.end();
             fs.rmSync(chunkDir, { recursive: true, force: true });
 
-            return res.json({
-                status: 'success',
-                message: 'Upload complete',
-                path: `/cdn/${uploadId}.${fileType}`
-            });
+            try {
+                const response = await db.insert(attachments).values({
+                    fileHash: uploadId,
+                    fileName,
+                    fileType,
+                    size: req.file.buffer.length
+                });
+
+                return res.json({
+                    status: 'success',
+                    message: 'Upload complete',
+                    path: `/cdn/${uploadId}.${fileType}`
+                });
+            } catch (error) {
+                res.status(500).send({ status: 'error', error });
+            }
         }
 
         return res.json({ status: 'success', message: `Chunk ${chunkIndex} received.` });

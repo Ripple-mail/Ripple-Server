@@ -1,10 +1,10 @@
 import express, { Router } from 'express';
 import { db } from '../../../../db/db';
 import { eq, sql } from 'drizzle-orm';
-import { users } from '../../../../db/schema';
-import { SMTPClient } from '../../client/smtpClient';
+import { emails, users } from '../../../../db/schema';
 import { readMailDir, readEmail } from '../../storage/readMail';
 import { getIO } from '../socket/websocket';
+import { saveEmail } from '../utils/storeEmail';
 
 const router: Router = express.Router();
 
@@ -33,9 +33,9 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:userId', async (req, res) => {
-    const userId = Number(req.params.userId.split('?')[0]);
+    const userId = req.params.userId.split('?')[0];
 
-    if (isNaN(userId)) {
+    if (!userId) {
         res.status(400).send({ status: 'error', error: 'Invalid user or ID' });
         return;
     }
@@ -54,9 +54,9 @@ router.get('/:userId', async (req, res) => {
 });
 
 router.get('/:userId/mail', async (req, res) => {
-    const userId = Number(req.params.userId.split('?')[0]);
+    const userId = req.params.userId.split('?')[0];
 
-    if (isNaN(userId)) {
+    if (!userId) {
         res.status(400).send({ status: 'error', error: 'Invalid user or ID' });
         return;
     }
@@ -80,13 +80,42 @@ router.get('/:userId/mail', async (req, res) => {
     }
 });
 
+router.get('/:userId/mail/sent', async (req, res) => {
+    const userId = req.params.userId.split('?')[0];
+
+    if (!userId) {
+        res.status(400).send({ status: 'error', error: 'Invalid user or ID' });
+        return;
+    }
+
+    let user = await db.query.users.findFirst({
+        where: eq(users.id, userId)
+    });
+
+    if (!user) {
+        res.status(404).send({ status: 'error', error: 'User with this ID not found.' });
+        return;
+    }
+
+    try {
+        const sentEmailsdb = await db.query.emails.findMany({
+            where: eq(emails.from, user.email)
+        });
+
+        return;
+    } catch (error) {
+        res.status(500).send({ status: 'error', error });
+        return;
+    }
+});
+
 router.get('/:userId/read/:timestamp', async (req, res) => {
     const { userId, timestamp } = req.params;
 
-    if (isNaN(Number(userId))) return res.status(400).send({ status: 'error', error: 'Invalid user or ID' });
+    if (!userId) return res.status(400).send({ status: 'error', error: 'Invalid user or ID' });
 
     let user = await db.query.users.findFirst({
-        where: eq(users.id, Number(userId))
+        where: eq(users.id, userId)
     });
 
     if (!user) return res.status(404).send({ status: 'error', error: 'User with this ID not found. '});
@@ -107,13 +136,13 @@ router.get('/:userId/read/:timestamp', async (req, res) => {
 router.get('/:userId/mail/:timestamp', async (req, res) => {
     const { timestamp, userId } = req.params;
 
-    if (isNaN(Number(userId))) {
+    if (!userId) {
         res.status(400).send({ status: 'error', error: 'Invalid user or ID' });
         return;
     }
 
     let user = await db.query.users.findFirst({
-        where: eq(users.id, Number(userId))
+        where: eq(users.id, userId)
     });
 
     if (!user) {
@@ -154,31 +183,19 @@ router.post('/register', async (req, res) => {
 
 router.post('/:userId/mail/send', async (req, res) => {
     const { from, rcpt, subject, body, fileHashes } = req.body;
-    const client = new SMTPClient();
     try {
-        await client.connect();
-        await client.sendMail(
-            `${from}`,
-            `${rcpt}`,
-            `Subject: ${subject}\r\n
-            Attachments: [${fileHashes}]\r\n
-            ${body}`
-        );
-        res.status(200).send({ status: 'success', response: 'Email sent successfully' });
+        const path = await saveEmail(rcpt, `From: ${from}\nTo: ${rcpt}\nSubject: ${subject}\r\nAttachments: [${fileHashes}]\r\n${body}`);
 
         // Get rcpt user
         let user = await db.query.users.findFirst({
             where: eq(users.email, rcpt)
         });
 
-        const email = `From: ${from}\nTo: ${rcpt}\nSubject: ${subject}\n${body}`;
-        
-        // Connect to IO server
+        // Emit newEmail via socket
         const io = getIO();
-
-        // Send 'sent-email' to socket
         io.to(`user_${user?.id}`).emit('newEmail');
-        console.log(Date.now());
+
+        res.status(200).send({ status: 'success', response: 'Email sent successfully' });
         return;
     } catch (error) {
         res.status(500).send({ status: 'error', error });
