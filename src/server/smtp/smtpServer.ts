@@ -1,7 +1,7 @@
 import * as net from 'net';
 import { SMTPSession } from './session.ts';
 import { handleCommand } from './commands.ts';
-import { PORT } from '../../config/config.ts';
+import { SMTP_PORT } from '../../config/config.ts';
 import { smtpConnectionsTotal, smtpActiveConnections, smtpErrorsTotal, smtpUpSince, smtpCommandsTotal } from './metrics/metrics.ts';
 
 export async function startSMTPServer() {
@@ -48,8 +48,8 @@ export async function startSMTPServer() {
 	});
 
 	return new Promise<void>((resolve, reject) => {
-		server.listen(PORT, () => {
-			console.log(`SMTP server listening on port ${PORT}`);
+		server.listen(SMTP_PORT, () => {
+			console.log(`SMTP server listening on port ${SMTP_PORT}`);
 			resolve();
 		});
 
