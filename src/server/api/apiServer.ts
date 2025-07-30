@@ -47,6 +47,9 @@ export async function startApiServer() {
     // Metrics endpoint
     app.get('/metrics', metricsEndpoint());
 
+    // cdn
+    app.use('/cdn', express.static(path.join(__dirname, './files')));
+
     const server = http.createServer(app);
     setupWebSocket(server);
 

@@ -80,6 +80,30 @@ router.get('/:userId/mail', async (req, res) => {
     }
 });
 
+router.get('/:userId/read/:timestamp', async (req, res) => {
+    const { userId, timestamp } = req.params;
+
+    if (isNaN(Number(userId))) return res.status(400).send({ status: 'error', error: 'Invalid user or ID' });
+
+    let user = await db.query.users.findFirst({
+        where: eq(users.id, Number(userId))
+    });
+
+    if (!user) return res.status(404).send({ status: 'error', error: 'User with this ID not found. '});
+
+    try {
+        const read = await readEmail(user.email.split('~')[0], timestamp, true);
+        if (!read) return res.status(404).send({ status: 'error', error: 'Email not found.' });
+        
+        const io = getIO();
+        io.to(`user_${user.id}`).emit('readEmail', read.filename);
+
+        return res.status(200).send({ status: 'success', message: 'Successfully marked email as read' });
+    } catch (error) {
+        return res.status(500).send({ status: 'error', error });
+    }
+});
+
 router.get('/:userId/mail/:timestamp', async (req, res) => {
     const { timestamp, userId } = req.params;
 
@@ -99,8 +123,10 @@ router.get('/:userId/mail/:timestamp', async (req, res) => {
 
     try {
         const email = await readEmail(user.email.split('~')[0], timestamp);
+        if (!email) return res.status(404).send({ status: 'error', error: 'Email not found.' });
+
         const io = getIO();
-        io.to(`user_${user.id}`).emit('readEmail', email?.filename);
+        io.to(`user_${user.id}`).emit('readEmail', email.filename);
         res.status(200).send({ status: 'success', email });
         return;
     } catch (error) {
@@ -127,7 +153,7 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/:userId/mail/send', async (req, res) => {
-    const { from, rcpt, subject, body } = req.body;
+    const { from, rcpt, subject, body, fileHashes } = req.body;
     const client = new SMTPClient();
     try {
         await client.connect();
@@ -135,6 +161,7 @@ router.post('/:userId/mail/send', async (req, res) => {
             `${from}`,
             `${rcpt}`,
             `Subject: ${subject}\r\n
+            Attachments: [${fileHashes}]\r\n
             ${body}`
         );
         res.status(200).send({ status: 'success', response: 'Email sent successfully' });

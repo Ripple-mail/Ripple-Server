@@ -14,8 +14,9 @@ export async function readMailDir(user: string) {
             return await Promise.all(files.map(async (file) => ({
                 filename: file,
                 path: path.join(dirPath, file),
-                content: await fs.readFile(path.join(dirPath, file), 'utf-8'),
-                unread
+                content: (getAttachments(await fs.readFile(path.join(dirPath, file), 'utf-8')))[0],
+                unread,
+                attachments: (getAttachments(await fs.readFile(path.join(dirPath, file), 'utf-8')))[1]
             })));
         } catch (error) {
             if ((error as any).code === 'ENOENT') return [];
@@ -29,7 +30,7 @@ export async function readMailDir(user: string) {
     return [...newEmails, ...readEmails];
 }
 
-export async function readEmail(user: string, timestamp: string) {
+export async function readEmail(user: string, timestamp: string, onlyMark: boolean = false) {
     const userDir = path.join(mailDir, user);
     const newDir = path.join(userDir, 'new');
     const curDir = path.join(userDir, 'cur');
@@ -63,11 +64,39 @@ export async function readEmail(user: string, timestamp: string) {
 
     if (!filePath) return null;
 
-    const content = await fs.readFile(filePath, 'utf-8');
-    return {
-        filename: path.basename(filePath),
-        filePath,
-        content,
-        unread
+    if (!onlyMark) {
+        const [content, attachments] = getAttachments(await fs.readFile(filePath, 'utf-8'));
+
+        return {
+            filename: path.basename(filePath),
+            filePath,
+            content,
+            unread,
+            attachments
+        }
+    } else {
+        return {
+            filename: path.basename(filePath),
+            filePath
+        }
     }
+}
+
+function getAttachments(content: string) {
+    const lines = content.split('\n');
+    let attachments: string[] = [];
+    const attachIndex = lines.findIndex(line => line.startsWith('Attachments:'));
+    if (attachIndex !== -1) {
+        const line = lines[attachIndex];
+        const match = line.match(/\[([^\]]+)\]/);
+        if (match) {
+            attachments = match[1].split(',').map(path => path.trim());
+        }
+
+        lines.splice(attachIndex, 1);
+    }
+
+    content = lines.join('\n');
+
+    return [content, attachments];
 }
