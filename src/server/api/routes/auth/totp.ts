@@ -1,11 +1,15 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { authenticator } from 'otplib';
 import qrcode from 'qrcode';
 import { db } from '../../../../../db/db';
 import { eq } from 'drizzle-orm';
 import { userTotp, users } from '../../../../../db/schema';
 
-const router = Router();
+const router: Router = express.Router();
+
+function formatSecret(secret: string) {
+    return secret.match(/.{1,4}/g)?.join(' ') ?? secret;
+}
 
 router.post('/setup', async (req, res) => {
     const { userId } = req.body;
@@ -19,7 +23,7 @@ router.post('/setup', async (req, res) => {
     const qr = await qrcode.toDataURL(otpauth);
 
     await db.insert(userTotp).values({ userId, secret }).onConflictDoUpdate({ target: userTotp.userId, set: { secret, confirmed: false } });
-    res.json({ qr, secret });
+    res.json({ qr, secret: formatSecret(secret) });
 });
 
 router.post('/verify', async (req, res) => {

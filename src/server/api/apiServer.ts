@@ -7,9 +7,10 @@ import fs from 'fs';
 import { metricsMiddleware, metricsEndpoint, updateFolderMetric, backendUpSince } from './metrics';
 import { setupWebSocket } from './socket/websocket';
 import { API_PORT } from '../../config/config';
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
-const allowedOrigins = ['http://localhost:5173'];
+const allowedOrigins = ['http://localhost:5173', 'https://ripple.ultraslayyy.xyz'];
 
 export async function startApiServer() {
     backendUpSince.setToCurrentTime();

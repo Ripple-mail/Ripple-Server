@@ -24,7 +24,6 @@ export function setupWebSocket(server: HTTPServer): SocketIOServer {
             console.log(`[WebSocket] Socket ${socket.id} joined room ${room}`);
         });
 
-
         socket.on('disconnect', () => {
             console.log(`[WebSocket] Client disconnected: ${socket.id}`);
         });

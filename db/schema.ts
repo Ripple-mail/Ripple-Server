@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { pgTable, check, text, boolean, uuid, varchar, jsonb, timestamp, unique, integer } from 'drizzle-orm/pg-core';
+import { AuthenticatorTransportFuture } from '../src/server/api/node_modules/@simplewebauthn/server';
 
 export const users = pgTable('users', {
     id: uuid('id').primaryKey().defaultRandom(),
@@ -39,7 +40,7 @@ export const passkeys = pgTable('passkeys', {
     credentialId: varchar('credential_id', { length: 255 }).notNull(),
     publicKey: varchar('public_key', { length: 5000 }).notNull(),
     counter: varchar('counter', { length: 64 }).notNull(),
-    transports: jsonb('transports'),
+    transports: jsonb('transports').$type<AuthenticatorTransportFuture[]>(),
     createdAt: timestamp('created_at').defaultNow()
 }, (table) => ({
     credentialIndex: unique().on(table.userId, table.credentialId)
