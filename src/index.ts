@@ -3,16 +3,19 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
 dotenv.config();
 
 const PORT = process.env.PORT || 3001;
 
 const app: Express = express();
 app.use(cors({
-    origin: '*',
+    origin: ['http://localhost:5173'],
     methods: ['GET', 'POST'],
+    credentials: true
 }));
 app.use(express.json());
+app.use(helmet());
 
 //* Load api routes dynamically
 const apiDir = path.join(__dirname, 'routes');
