@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 dotenv.config();
 
 const PORT = process.env.PORT || 3001;
@@ -16,6 +17,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(helmet());
+app.use(cookieParser());
 
 //* Load api routes dynamically
 const apiDir = path.join(__dirname, 'routes');

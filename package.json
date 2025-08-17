@@ -23,6 +23,7 @@
 	"devDependencies": {
 		"@swc/core": "^1.13.3",
 		"@types/bcrypt": "^6.0.0",
+		"@types/cookie-parser": "^1.4.9",
 		"@types/cors": "^2.8.19",
 		"@types/express": "^5.0.3",
 		"@types/jsonwebtoken": "^9.0.10",
@@ -35,6 +36,7 @@
 	},
 	"dependencies": {
 		"bcrypt": "^6.0.0",
+		"cookie-parser": "^1.4.7",
 		"cors": "^2.8.5",
 		"dotenv": "^17.2.1",
 		"drizzle-orm": "^0.44.4",
