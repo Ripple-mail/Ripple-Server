@@ -1,15 +1,13 @@
-import express from 'express';
-import http from 'http';
+import express, { Express} from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
-import { setupWS } from './socket/ws';
 dotenv.config();
 
 const PORT = process.env.PORT || 3001;
 
-const app = express();
+const app: Express = express();
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST'],
@@ -45,9 +43,6 @@ function loadRoutes(dir: string) {
 
 loadRoutes(apiDir);
 
-const server = http.createServer(app);
-setupWS(server);
-
-server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+    console.log(`[EXPRESS] Server is running at http://localhost:${PORT}. Better go catch it`);
 });
