@@ -1,6 +1,0 @@
-{
-    "watch": ["src/smtp"],
-    "ext": "ts,json",
-    "ignore": "dist",
-    "exec": "ts-node src/server/smtp/smtpServer.ts"
-}
