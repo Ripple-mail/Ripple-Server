@@ -7,7 +7,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 dotenv.config();
 
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.PORT) || 3001;
 
 const app: Express = express();
 app.use(cors({
@@ -48,6 +48,6 @@ function loadRoutes(dir: string) {
 
 loadRoutes(apiDir);
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[EXPRESS] Server is running at http://localhost:${PORT}. Better go catch it`);
 });
