@@ -5,6 +5,8 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { xssSanitizer } from './middleware/xss';
+import { xssFilter } from 'helmet';
 dotenv.config();
 
 const PORT = Number(process.env.PORT) || 3001;
@@ -18,6 +20,8 @@ app.use(cors({
 app.use(express.json());
 app.use(helmet());
 app.use(cookieParser());
+app.set('trust proxy', true);
+app.use(xssSanitizer);
 
 //* Load api routes dynamically
 const apiDir = path.join(__dirname, 'routes');
