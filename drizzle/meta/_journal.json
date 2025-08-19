@@ -5,8 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1755591503025,
+      "when": 1755599139591,
       "tag": "0000_damp_prodigy",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1755599235779,
+      "tag": "0001_add_email_search_vector",
       "breakpoints": true
     }
   ]

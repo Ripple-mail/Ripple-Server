@@ -1,6 +1,6 @@
 {
-  "id": "f9dc2d8b-1242-4272-a4ca-aeabebbf2f54",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "96556dc8-2d7b-4221-9ce8-98089b814703",
+  "prevId": "f9dc2d8b-1242-4272-a4ca-aeabebbf2f54",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -70,24 +70,24 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "attachments_email_id_emails_id_fk": {
           "name": "attachments_email_id_emails_id_fk",
           "tableFrom": "attachments",
-          "tableTo": "emails",
           "columnsFrom": [
             "email_id"
           ],
+          "tableTo": "emails",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -150,15 +150,15 @@
         "audit_logs_user_id_users_id_fk": {
           "name": "audit_logs_user_id_users_id_fk",
           "tableFrom": "audit_logs",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -202,9 +202,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "email_label_label_idx": {
           "name": "email_label_label_idx",
@@ -217,9 +217,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "email_label_unique_idx": {
           "name": "email_label_unique_idx",
@@ -238,37 +238,37 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "email_labels_email_id_emails_id_fk": {
           "name": "email_labels_email_id_emails_id_fk",
           "tableFrom": "email_labels",
-          "tableTo": "emails",
           "columnsFrom": [
             "email_id"
           ],
+          "tableTo": "emails",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "email_labels_label_id_labels_id_fk": {
           "name": "email_labels_label_id_labels_id_fk",
           "tableFrom": "email_labels",
-          "tableTo": "labels",
           "columnsFrom": [
             "label_id"
           ],
+          "tableTo": "labels",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -370,9 +370,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "email_sender_idx": {
           "name": "email_sender_idx",
@@ -385,9 +385,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "email_mailbox_created_idx": {
           "name": "email_mailbox_created_idx",
@@ -406,37 +406,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "emails_mailbox_id_mailboxes_id_fk": {
           "name": "emails_mailbox_id_mailboxes_id_fk",
           "tableFrom": "emails",
-          "tableTo": "mailboxes",
           "columnsFrom": [
             "mailbox_id"
           ],
+          "tableTo": "mailboxes",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "emails_sender_id_users_id_fk": {
           "name": "emails_sender_id_users_id_fk",
           "tableFrom": "emails",
-          "tableTo": "users",
           "columnsFrom": [
             "sender_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -499,24 +499,24 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "labels_user_id_users_id_fk": {
           "name": "labels_user_id_users_id_fk",
           "tableFrom": "labels",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -595,9 +595,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "mailbox_user_name_idx": {
           "name": "mailbox_user_name_idx",
@@ -616,24 +616,24 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "mailboxes_user_id_users_id_fk": {
           "name": "mailboxes_user_id_users_id_fk",
           "tableFrom": "mailboxes",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -684,9 +684,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "recipient_rcpt_idx": {
           "name": "recipient_rcpt_idx",
@@ -699,9 +699,9 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "recipient_email_type_idx": {
           "name": "recipient_email_type_idx",
@@ -720,37 +720,37 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         }
       },
       "foreignKeys": {
         "recipients_email_id_emails_id_fk": {
           "name": "recipients_email_id_emails_id_fk",
           "tableFrom": "recipients",
-          "tableTo": "emails",
           "columnsFrom": [
             "email_id"
           ],
+          "tableTo": "emails",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         },
         "recipients_user_id_users_id_fk": {
           "name": "recipients_user_id_users_id_fk",
           "tableFrom": "recipients",
-          "tableTo": "users",
           "columnsFrom": [
             "user_id"
           ],
+          "tableTo": "users",
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
+          "onUpdate": "no action",
+          "onDelete": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -833,9 +833,9 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "users_email_idx": {
           "name": "users_email_idx",
@@ -848,9 +848,9 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "concurrently": false
         },
         "active_users_idx": {
           "name": "active_users_idx",
@@ -863,10 +863,10 @@
             }
           ],
           "isUnique": false,
-          "where": "deleted_at IS NULL AND is_active = true",
-          "concurrently": false,
+          "with": {},
           "method": "btree",
-          "with": {}
+          "where": "deleted_at IS NULL AND is_active = true",
+          "concurrently": false
         }
       },
       "foreignKeys": {},
@@ -874,17 +874,17 @@
       "uniqueConstraints": {
         "users_username_unique": {
           "name": "users_username_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "username"
-          ]
+          ],
+          "nullsNotDistinct": false
         },
         "users_email_unique": {
           "name": "users_email_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ]
+          ],
+          "nullsNotDistinct": false
         }
       },
       "policies": {},
@@ -924,10 +924,10 @@
     }
   },
   "schemas": {},
+  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
-  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},
