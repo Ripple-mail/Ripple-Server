@@ -15,6 +15,7 @@ export const mailboxTypes = pgEnum('mailbox_types', [
 ]);
 
 export const actionTypes = pgEnum('action_types', [
+    'register',
     'login',
     'logout',
     'send_email',
@@ -22,7 +23,9 @@ export const actionTypes = pgEnum('action_types', [
 ]);
 
 const tsvector = customType<{ data: string; notNull: true; default: false; }>({
-    dataType() { return 'tsvector'; }
+    dataType() {
+        return 'tsvector';
+    }
 });
 
 export const users = pgTable('users', {

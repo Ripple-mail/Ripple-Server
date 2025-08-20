@@ -57,15 +57,13 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ status: 'error', error: 'Invalid IP address' });
         }
 
-
         await db.insert(auditLogs).values({
             userId: user.id,
             action: 'User logged in successfully',
             actionType: 'login',
             metadata: JSON.stringify({
                 method: 'password',
-                browser: userAgent,
-                success: true
+                browser: userAgent
             }),
             ipAddress: clientIp
         });
