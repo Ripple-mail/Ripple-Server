@@ -34,16 +34,18 @@ router.post('/', async (req, res) => {
 
         const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
 
-        const user = await db.insert(users).values({
+        const user = (await db.insert(users).values({
             username,
             email,
             passwordHash
-        }).returning({ id: users.id });
+        }).returning({ id: users.id }))[0];
 
-        await db.insert(mailboxes).values({ name: 'inbox', userId: user[0].id, mailboxType: 'inbox', systemMailbox: true });
-        await db.insert(mailboxes).values({ name: 'sent', userId: user[0].id, mailboxType: 'sent', systemMailbox: true });
-        await db.insert(mailboxes).values({ name: 'draft', userId: user[0].id, mailboxType: 'draft', systemMailbox: true });
-        await db.insert(mailboxes).values({ name: 'trash', userId: user[0].id, mailboxType: 'trash', systemMailbox: true });
+        await db.insert(mailboxes).values([
+            { name: 'inbox', userId: user.id, mailboxType: 'inbox', systemMailbox: true },
+            { name: 'sent', userId: user.id, mailboxType: 'sent', systemMailbox: true },
+            { name: 'drafts', userId: user.id, mailboxType: 'draft', systemMailbox: true },
+            { name: 'trash', userId: user.id, mailboxType: 'trash', systemMailbox: true },
+        ]);
 
         const userAgent = req.headers['user-agent'] || '';
         const clientIp = req.ips.length ? req.ips[0] : req.ip;
@@ -52,7 +54,7 @@ router.post('/', async (req, res) => {
         }
 
         await db.insert(auditLogs).values({
-            userId: user[0].id,
+            userId: user.id,
             action: 'User registerd succesfully',
             actionType: 'register',
             metadata: JSON.stringify({
