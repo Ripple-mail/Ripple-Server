@@ -63,7 +63,7 @@ router.post('/', async (req, res) => {
             actionType: 'login',
             metadata: JSON.stringify({
                 method: 'password',
-                browser: userAgent
+                agent: userAgent
             }),
             ipAddress: clientIp
         });

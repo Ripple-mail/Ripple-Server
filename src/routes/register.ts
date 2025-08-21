@@ -58,7 +58,7 @@ router.post('/', async (req, res) => {
             action: 'User registerd succesfully',
             actionType: 'register',
             metadata: JSON.stringify({
-                browser: userAgent,
+                agent: userAgent,
             }),
             ipAddress: clientIp
         });

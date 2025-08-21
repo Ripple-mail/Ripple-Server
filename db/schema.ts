@@ -15,11 +15,32 @@ export const mailboxTypes = pgEnum('mailbox_types', [
 ]);
 
 export const actionTypes = pgEnum('action_types', [
+    // Auth/Security
     'register',
     'login',
+    'failed_login_attempt',
     'logout',
+    'password_reset_request',
+    'password_reset_complete',
+    'two_factor_enabled',
+    'two_factor_disabled',
+
+    // Emails
     'send_email',
-    'delete_email'
+    'move_email',
+    'delete_email',
+    'restore_email',
+    'forward_email',
+
+    // Mailboxes and Labels
+    'create_mailbox',
+    'rename_mailbox',
+    'delete_mailbox',
+    'create_label',
+    'rename_label',
+    'delete_label',
+    'apply_label',
+    'remove_label'
 ]);
 
 const tsvector = customType<{ data: string; notNull: true; default: false; }>({
@@ -125,7 +146,7 @@ export const auditLogs = pgTable('audit_logs', {
     id: serial('id').primaryKey(),
     userId: integer('user_id').references(() => users.id),
     action: text('action').notNull(),
-    actionType: actionTypes('action_type'),
+    actionType: actionTypes('action_type').notNull(),
     ipAddress: text('ip_address'),
     metadata: text('metadata'),
     createdAt: timestamp('created_at').defaultNow()
