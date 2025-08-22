@@ -6,12 +6,9 @@ import { emails, mailboxes } from '../../db/schema';
 
 const router: Router = express.Router();
 
-router.get('/', async (req, res) => {
-    /* if (!req.user) {
-        return res.status(401).json({ status: 'error', error: 'User not authenticated' });
-    } */
+router.get('/', authMiddleware, async (req, res) => {
     if (!req.user) {
-        req.user = { id: 1, email: 'ultra~ripple.com', name: 'ultraslayyy' }
+        return res.status(401).json({ status: 'error', error: 'User not authenticated' });
     }
 
     try {
