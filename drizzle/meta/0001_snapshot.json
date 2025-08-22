@@ -1,6 +1,6 @@
 {
-  "id": "96556dc8-2d7b-4221-9ce8-98089b814703",
-  "prevId": "f9dc2d8b-1242-4272-a4ca-aeabebbf2f54",
+  "id": "6cc00ef1-4aa0-4d1e-bda5-d4300a2fef75",
+  "prevId": "f628f2b3-9ae4-472f-a191-446277983646",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -108,7 +108,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -123,7 +123,7 @@
           "type": "action_types",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "ip_address": {
           "name": "ip_address",
@@ -283,19 +283,19 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
         "mailbox_id": {
           "name": "mailbox_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
         "sender_id": {
           "name": "sender_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -451,13 +451,13 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
         "user_id": {
           "name": "user_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -531,13 +531,13 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
         "user_id": {
           "name": "user_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -633,7 +633,7 @@
             "id"
           ],
           "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -660,7 +660,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "integer",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -759,13 +759,75 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.user_settings": {
+      "name": "user_settings",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "theme": {
+          "name": "theme",
+          "type": "theme",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'light'"
+        },
+        "language": {
+          "name": "language",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'en'"
+        },
+        "mfa_enabled": {
+          "name": "mfa_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "mfaMethod": {
+          "name": "mfaMethod",
+          "type": "mfa_method",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_settings_user_id_users_id_fk": {
+          "name": "user_settings_user_id_users_id_fk",
+          "tableFrom": "user_settings",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.users": {
       "name": "users",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "text",
           "primaryKey": true,
           "notNull": true
         },
@@ -897,10 +959,27 @@
       "name": "action_types",
       "schema": "public",
       "values": [
+        "register",
         "login",
+        "failed_login_attempt",
         "logout",
+        "password_reset_request",
+        "password_reset_complete",
+        "two_factor_enabled",
+        "two_factor_disabled",
         "send_email",
-        "delete_email"
+        "move_email",
+        "delete_email",
+        "restore_email",
+        "forward_email",
+        "create_mailbox",
+        "rename_mailbox",
+        "delete_mailbox",
+        "create_label",
+        "rename_label",
+        "delete_label",
+        "apply_label",
+        "remove_label"
       ]
     },
     "public.mailbox_types": {
@@ -913,6 +992,15 @@
         "trash"
       ]
     },
+    "public.mfa_method": {
+      "name": "mfa_method",
+      "schema": "public",
+      "values": [
+        "otp",
+        "webauthn",
+        "both"
+      ]
+    },
     "public.rcpt_types": {
       "name": "rcpt_types",
       "schema": "public",
@@ -920,6 +1008,15 @@
         "to",
         "cc",
         "bcc"
+      ]
+    },
+    "public.theme": {
+      "name": "theme",
+      "schema": "public",
+      "values": [
+        "light",
+        "dark",
+        "system"
       ]
     }
   },

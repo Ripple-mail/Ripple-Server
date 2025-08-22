@@ -102,7 +102,7 @@ export const mailboxes = pgTable('mailboxes', {
 
 export const emails = pgTable('emails', {
     id: prefixedId('eml'),
-    mailboxId: integer('mailbox_id').references(() => mailboxes.id).notNull(),
+    mailboxId: text('mailbox_id').references(() => mailboxes.id).notNull(),
     senderId: text('sender_id').references(() => users.id),
     subject: text('subject'),
     emlPath: text('eml_path').notNull(),

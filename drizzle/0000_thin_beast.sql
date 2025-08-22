@@ -1,6 +1,8 @@
-CREATE TYPE "public"."action_types" AS ENUM('login', 'logout', 'send_email', 'delete_email');--> statement-breakpoint
+CREATE TYPE "public"."action_types" AS ENUM('register', 'login', 'failed_login_attempt', 'logout', 'password_reset_request', 'password_reset_complete', 'two_factor_enabled', 'two_factor_disabled', 'send_email', 'move_email', 'delete_email', 'restore_email', 'forward_email', 'create_mailbox', 'rename_mailbox', 'delete_mailbox', 'create_label', 'rename_label', 'delete_label', 'apply_label', 'remove_label');--> statement-breakpoint
 CREATE TYPE "public"."mailbox_types" AS ENUM('inbox', 'sent', 'draft', 'trash');--> statement-breakpoint
+CREATE TYPE "public"."mfa_method" AS ENUM('otp', 'webauthn', 'both');--> statement-breakpoint
 CREATE TYPE "public"."rcpt_types" AS ENUM('to', 'cc', 'bcc');--> statement-breakpoint
+CREATE TYPE "public"."theme" AS ENUM('light', 'dark', 'system');--> statement-breakpoint
 CREATE TABLE "attachments" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"email_id" integer NOT NULL,
@@ -14,9 +16,9 @@ CREATE TABLE "attachments" (
 --> statement-breakpoint
 CREATE TABLE "audit_logs" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer,
+	"user_id" text,
 	"action" text NOT NULL,
-	"action_type" "action_types",
+	"action_type" "action_types" NOT NULL,
 	"ip_address" text,
 	"metadata" text,
 	"created_at" timestamp DEFAULT now()
@@ -29,9 +31,9 @@ CREATE TABLE "email_labels" (
 );
 --> statement-breakpoint
 CREATE TABLE "emails" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"mailbox_id" integer NOT NULL,
-	"sender_id" integer,
+	"id" text PRIMARY KEY NOT NULL,
+	"mailbox_id" text NOT NULL,
+	"sender_id" text,
 	"subject" text,
 	"eml_path" text NOT NULL,
 	"body_text" text,
@@ -44,16 +46,16 @@ CREATE TABLE "emails" (
 );
 --> statement-breakpoint
 CREATE TABLE "labels" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
 	"name" text NOT NULL,
 	"color" text,
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE "mailboxes" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
 	"name" text NOT NULL,
 	"mailbox_type" "mailbox_types" DEFAULT 'inbox',
 	"system_mailbox" boolean DEFAULT false,
@@ -65,12 +67,20 @@ CREATE TABLE "mailboxes" (
 CREATE TABLE "recipients" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"email_id" integer NOT NULL,
-	"user_id" integer,
+	"user_id" text,
 	"type" "rcpt_types" NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "user_settings" (
+	"user_id" text PRIMARY KEY NOT NULL,
+	"theme" "theme" DEFAULT 'light' NOT NULL,
+	"language" text DEFAULT 'en' NOT NULL,
+	"mfa_enabled" boolean DEFAULT false NOT NULL,
+	"mfaMethod" "mfa_method"
+);
+--> statement-breakpoint
 CREATE TABLE "users" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" text PRIMARY KEY NOT NULL,
 	"username" text NOT NULL,
 	"email" text NOT NULL,
 	"password_hash" text NOT NULL,
@@ -90,9 +100,10 @@ ALTER TABLE "email_labels" ADD CONSTRAINT "email_labels_label_id_labels_id_fk" F
 ALTER TABLE "emails" ADD CONSTRAINT "emails_mailbox_id_mailboxes_id_fk" FOREIGN KEY ("mailbox_id") REFERENCES "public"."mailboxes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "emails" ADD CONSTRAINT "emails_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "labels" ADD CONSTRAINT "labels_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "mailboxes" ADD CONSTRAINT "mailboxes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "mailboxes" ADD CONSTRAINT "mailboxes_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "recipients" ADD CONSTRAINT "recipients_email_id_emails_id_fk" FOREIGN KEY ("email_id") REFERENCES "public"."emails"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "recipients" ADD CONSTRAINT "recipients_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "attachment_email_idx" ON "attachments" USING btree ("email_id");--> statement-breakpoint
 CREATE INDEX "email_label_email_idx" ON "email_labels" USING btree ("email_id");--> statement-breakpoint
 CREATE INDEX "email_label_label_idx" ON "email_labels" USING btree ("label_id");--> statement-breakpoint

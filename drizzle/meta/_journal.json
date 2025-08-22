@@ -5,29 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1755599139591,
-      "tag": "0000_damp_prodigy",
+      "when": 1755846507825,
+      "tag": "0000_thin_beast",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1755599235779,
+      "when": 1755846528030,
       "tag": "0001_add_email_search_vector",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1755822025559,
-      "tag": "0002_brief_naoko",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1755822090472,
-      "tag": "0003_create_user_related_rows",
+      "when": 1755846554809,
+      "tag": "0002_create_user_related_rows",
       "breakpoints": true
     }
   ]
