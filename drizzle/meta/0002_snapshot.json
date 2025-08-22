@@ -1,6 +1,6 @@
 {
-  "id": "0599802a-3ca2-411a-a433-e2c88b0d2e51",
-  "prevId": "6cc00ef1-4aa0-4d1e-bda5-d4300a2fef75",
+  "id": "db2373ed-241b-4b9c-838a-42ae01f2ea91",
+  "prevId": "052fbfc9-88f8-4e64-b4be-7a5b2c7801b4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -283,19 +283,19 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "serial",
           "primaryKey": true,
           "notNull": true
         },
         "mailbox_id": {
           "name": "mailbox_id",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
         "sender_id": {
           "name": "sender_id",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -451,13 +451,13 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "serial",
           "primaryKey": true,
           "notNull": true
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -531,13 +531,13 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "serial",
           "primaryKey": true,
           "notNull": true
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
@@ -660,7 +660,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -765,7 +765,7 @@
       "columns": {
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "integer",
           "primaryKey": true,
           "notNull": true
         },
@@ -827,7 +827,7 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "serial",
           "primaryKey": true,
           "notNull": true
         },

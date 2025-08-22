@@ -16,7 +16,7 @@ CREATE TABLE "attachments" (
 --> statement-breakpoint
 CREATE TABLE "audit_logs" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" text,
+	"user_id" integer,
 	"action" text NOT NULL,
 	"action_type" "action_types" NOT NULL,
 	"ip_address" text,
@@ -31,9 +31,9 @@ CREATE TABLE "email_labels" (
 );
 --> statement-breakpoint
 CREATE TABLE "emails" (
-	"id" text PRIMARY KEY NOT NULL,
-	"mailbox_id" text NOT NULL,
-	"sender_id" text,
+	"id" serial PRIMARY KEY NOT NULL,
+	"mailbox_id" integer NOT NULL,
+	"sender_id" integer,
 	"subject" text,
 	"eml_path" text NOT NULL,
 	"body_text" text,
@@ -46,16 +46,16 @@ CREATE TABLE "emails" (
 );
 --> statement-breakpoint
 CREATE TABLE "labels" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_id" text NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
 	"name" text NOT NULL,
 	"color" text,
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE "mailboxes" (
-	"id" text PRIMARY KEY NOT NULL,
-	"user_id" text NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" integer NOT NULL,
 	"name" text NOT NULL,
 	"mailbox_type" "mailbox_types" DEFAULT 'inbox',
 	"system_mailbox" boolean DEFAULT false,
@@ -67,12 +67,12 @@ CREATE TABLE "mailboxes" (
 CREATE TABLE "recipients" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"email_id" integer NOT NULL,
-	"user_id" text,
+	"user_id" integer,
 	"type" "rcpt_types" NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "user_settings" (
-	"user_id" text PRIMARY KEY NOT NULL,
+	"user_id" integer PRIMARY KEY NOT NULL,
 	"theme" "theme" DEFAULT 'light' NOT NULL,
 	"language" text DEFAULT 'en' NOT NULL,
 	"mfa_enabled" boolean DEFAULT false NOT NULL,
@@ -80,7 +80,7 @@ CREATE TABLE "user_settings" (
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
 	"username" text NOT NULL,
 	"email" text NOT NULL,
 	"password_hash" text NOT NULL,

@@ -2,10 +2,6 @@ import { sql } from 'drizzle-orm';
 import { pgTable, pgEnum, serial, text, timestamp, integer, boolean, index, uniqueIndex, customType } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
 
-function prefixedId(prefix: string, rowName: string = 'id') {
-    return text(rowName).primaryKey().$defaultFn(() => `${prefix}_${createId()}`);
-}
-
 export const themeOptions = pgEnum('theme', ['light', 'dark', 'system']);
 
 export const mfaMethods = pgEnum('mfa_method', ['otp', 'webauthn', 'both']);
@@ -59,7 +55,7 @@ const tsvector = customType<{ data: string; notNull: true; default: false; }>({
 });
 
 export const users = pgTable('users', {
-    id: prefixedId('usr'),
+    id: serial('id').primaryKey(),
     username: text('username').notNull().unique(),
     email: text('email').notNull().unique(),
     passwordHash: text('password_hash').notNull(),
@@ -75,7 +71,7 @@ export const users = pgTable('users', {
 ]);
 
 export const user_settings = pgTable('user_settings', {
-    userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+    userId: integer('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
 
     // UI/Gen
     theme: themeOptions().default('light').notNull(),
@@ -87,8 +83,8 @@ export const user_settings = pgTable('user_settings', {
 });
 
 export const mailboxes = pgTable('mailboxes', {
-    id: prefixedId('mlb'),
-    userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
     name: text('name').notNull(),
     mailboxType: mailboxTypes('mailbox_type').default('inbox'),
     systemMailbox: boolean('system_mailbox').default(false),
@@ -101,9 +97,9 @@ export const mailboxes = pgTable('mailboxes', {
 ]);
 
 export const emails = pgTable('emails', {
-    id: prefixedId('eml'),
-    mailboxId: text('mailbox_id').references(() => mailboxes.id).notNull(),
-    senderId: text('sender_id').references(() => users.id),
+    id: serial('id').primaryKey(),
+    mailboxId: integer('mailbox_id').references(() => mailboxes.id).notNull(),
+    senderId: integer('sender_id').references(() => users.id),
     subject: text('subject'),
     emlPath: text('eml_path').notNull(),
     bodyText: text('body_text'),
@@ -122,7 +118,7 @@ export const emails = pgTable('emails', {
 export const recipients = pgTable('recipients', {
     id: serial('id').primaryKey(),
     emailId: integer('email_id').references(() => emails.id).notNull(),
-    userId: text('user_id').references(() => users.id),
+    userId: integer('user_id').references(() => users.id),
     type: rcptTypes('type').notNull()
 }, (table) => [
     index('recipient_email_idx').on(table.emailId),
@@ -144,8 +140,8 @@ export const attachments = pgTable('attachments', {
 ]);
 
 export const labels = pgTable('labels', {
-    id: prefixedId('lbl'),
-    userId: text('user_id').references(() => users.id).notNull(),
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id).notNull(),
     name: text('name').notNull(),
     color: text('color'),
     createdAt: timestamp('created_at').defaultNow()
@@ -165,7 +161,7 @@ export const emailLabels = pgTable('email_labels', {
 
 export const auditLogs = pgTable('audit_logs', {
     id: serial('id').primaryKey(),
-    userId: text('user_id').references(() => users.id),
+    userId: integer('user_id').references(() => users.id),
     action: text('action').notNull(),
     actionType: actionTypes('action_type').notNull(),
     ipAddress: text('ip_address'),

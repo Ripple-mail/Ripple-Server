@@ -3,7 +3,7 @@ RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO user_settings (user_id)
   VALUES (NEW.id);
-  INSERT INTO mailboxes (user_id, name, mailboxType, systemMailbox)
+  INSERT INTO mailboxes (user_id, name, mailbox_type, system_mailbox)
   VALUES
     (NEW.id, 'Inbox', 'inbox', true),
     (NEW.id, 'Sent', 'inbox', true),
@@ -13,6 +13,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 --> statement-breakpoint
+DROP TRIGGER IF EXISTS after_user_insert ON users;--> statement-breakpoint
 CREATE TRIGGER after_user_insert--> statement-breakpoint
 AFTER INSERT ON users
 FOR EACH ROW

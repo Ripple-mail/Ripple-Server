@@ -5,21 +5,21 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1755846507825,
-      "tag": "0000_thin_beast",
+      "when": 1755849173139,
+      "tag": "0000_flashy_mikhail_rasputin",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1755846528030,
+      "when": 1755849187456,
       "tag": "0001_add_email_search_vector",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1755846554809,
+      "when": 1755849204710,
       "tag": "0002_create_user_related_rows",
       "breakpoints": true
     }
