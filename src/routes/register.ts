@@ -40,13 +40,6 @@ router.post('/', async (req, res) => {
             passwordHash
         }).returning({ id: users.id }))[0];
 
-        await db.insert(mailboxes).values([
-            { name: 'inbox', userId: user.id, mailboxType: 'inbox', systemMailbox: true },
-            { name: 'sent', userId: user.id, mailboxType: 'sent', systemMailbox: true },
-            { name: 'drafts', userId: user.id, mailboxType: 'draft', systemMailbox: true },
-            { name: 'trash', userId: user.id, mailboxType: 'trash', systemMailbox: true },
-        ]);
-
         const userAgent = req.headers['user-agent'] || '';
         const clientIp = req.ips.length ? req.ips[0] : req.ip;
         if (clientIp && !net.isIP(clientIp)) {

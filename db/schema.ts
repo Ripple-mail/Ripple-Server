@@ -6,6 +6,10 @@ function prefixedId(prefix: string, rowName: string = 'id') {
     return text(rowName).primaryKey().$defaultFn(() => `${prefix}_${createId()}`);
 }
 
+export const themeOptions = pgEnum('theme', ['light', 'dark', 'system']);
+
+export const mfaMethods = pgEnum('mfa_method', ['otp', 'webauthn', 'both']);
+
 export const rcptTypes = pgEnum('rcpt_types', [
     'to',
     'cc',
@@ -70,9 +74,21 @@ export const users = pgTable('users', {
     index('active_users_idx').on(table.username).where(sql`deleted_at IS NULL AND is_active = true`)
 ]);
 
+export const user_settings = pgTable('user_settings', {
+    userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+
+    // UI/Gen
+    theme: themeOptions().default('light').notNull(),
+    language: text('language').default('en').notNull(),
+
+    // MFA
+    mfaEnabled: boolean('mfa_enabled').default(false).notNull(),
+    mfaMethod: mfaMethods(),
+});
+
 export const mailboxes = pgTable('mailboxes', {
-    id: serial('id').primaryKey(),
-    userId: text('user_id').references(() => users.id).notNull(),
+    id: prefixedId('mlb'),
+    userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
     name: text('name').notNull(),
     mailboxType: mailboxTypes('mailbox_type').default('inbox'),
     systemMailbox: boolean('system_mailbox').default(false),
@@ -85,7 +101,7 @@ export const mailboxes = pgTable('mailboxes', {
 ]);
 
 export const emails = pgTable('emails', {
-    id: serial('id').primaryKey(),
+    id: prefixedId('eml'),
     mailboxId: integer('mailbox_id').references(() => mailboxes.id).notNull(),
     senderId: text('sender_id').references(() => users.id),
     subject: text('subject'),
@@ -128,7 +144,7 @@ export const attachments = pgTable('attachments', {
 ]);
 
 export const labels = pgTable('labels', {
-    id: serial('id').primaryKey(),
+    id: prefixedId('lbl'),
     userId: text('user_id').references(() => users.id).notNull(),
     name: text('name').notNull(),
     color: text('color'),

@@ -7,7 +7,7 @@ BEGIN
     setweight(to_tsvector('english', coalesce(NEW.body_text, '')), 'B');
   RETURN NEW;
 END
-$$ language plpgsql;
+$$ LANGUAGE plpgsql;
 --> statement-breakpoint
 CREATE TRIGGER emails_search_update--> statement-breakpoint
 BEFORE INSERT OR UPDATE ON emails

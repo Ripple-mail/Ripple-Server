@@ -15,6 +15,20 @@
       "when": 1755599235779,
       "tag": "0001_add_email_search_vector",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755822025559,
+      "tag": "0002_brief_naoko",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1755822090472,
+      "tag": "0003_create_user_related_rows",
+      "breakpoints": true
     }
   ]
 }
