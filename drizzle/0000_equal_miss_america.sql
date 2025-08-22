@@ -42,7 +42,7 @@ CREATE TABLE "emails" (
 	"created_at" timestamp DEFAULT now(),
 	"updated_at" timestamp DEFAULT now(),
 	"deleted_at" timestamp,
-	"search_vector" "tsvector" NOT NULL
+	"search_vector" "tsvector"
 );
 --> statement-breakpoint
 CREATE TABLE "labels" (

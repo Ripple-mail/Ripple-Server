@@ -48,7 +48,7 @@ export const actionTypes = pgEnum('action_types', [
     'remove_label'
 ]);
 
-const tsvector = customType<{ data: string; notNull: true; default: false; }>({
+const tsvector = customType<{ data: string; notNull: false; default: false; }>({
     dataType() {
         return 'tsvector';
     }
@@ -108,7 +108,7 @@ export const emails = pgTable('emails', {
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
     deletedAt: timestamp('deleted_at'),
-    searchVector: tsvector('search_vector').notNull()
+    searchVector: tsvector('search_vector')
 }, (table) => [
     index('email_mailbox_idx').on(table.mailboxId),
     index('email_sender_idx').on(table.senderId),

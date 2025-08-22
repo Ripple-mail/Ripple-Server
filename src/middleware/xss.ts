@@ -45,7 +45,21 @@ function sanitizeObject(obj: any): any {
 
 export function xssSanitizer(req: Request, res: Response, next: NextFunction) {
     if (req.body) req.body = sanitizeObject(req.body);
-    if (req.query) req.query = sanitizeObject(req.query);
-    if (req.params) req.params = sanitizeObject(req.params);
+    if (req.query) {
+        for (const key in req.query) {
+            if (Object.prototype.hasOwnProperty.call(req.query, key)) {
+                req.query[key] = sanitizeObject(req.query[key]);
+            }
+        }
+    }
+
+    if (req.params) {
+        for (const key in req.params) {
+            if (Object.prototype.hasOwnProperty.call(req.params, key)) {
+                req.params[key] = sanitizeObject(req.params[key]);
+            }
+        }
+    }
+    
     next();
 }

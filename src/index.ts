@@ -58,10 +58,10 @@ loadRoutes(apiDir);
 
 const server = app.listen(PORT, '0.0.0.0', () => {
     const ip = getLocalIp();
-    console.log(`[Express] Server is running at:`);
-    console.log(`    Local:   http://localhost:${PORT}`);
-    console.log(`    Network: http://${ip}:${PORT}`);
-    console.log('Blimey there\'s two now? You catch the one running locally I\'ll catch the network one!');
+    console.log(`\x1b[1m\x1b[34m[Express]\x1b[0m Server is running at:`);
+    console.log(`    Local:   \x1b[32m\x1b[4mhttp://localhost:${PORT}\x1b[0m`);
+    console.log(`    Network: \x1b[32m\x1b[4mhttp://${ip}:${PORT}\x1b[0m`);
+    console.log('\x1b[33mBlimey there\'s two now? You catch the one running locally I\'ll catch the network one!\x1b[0m');
 });
 
 function getLocalIp() {

@@ -1,6 +1,6 @@
 {
-  "id": "052fbfc9-88f8-4e64-b4be-7a5b2c7801b4",
-  "prevId": "16460d93-2f2f-4825-afbb-fa67ae232c61",
+  "id": "48716916-ea03-4a45-b62a-14066ff3f5e2",
+  "prevId": "9e689681-95f7-4a9b-b3be-664c8df54bb7",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -355,7 +355,7 @@
           "name": "search_vector",
           "type": "tsvector",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         }
       },
       "indexes": {
