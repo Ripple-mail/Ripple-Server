@@ -3,7 +3,7 @@ import "express";
 export interface JwtUser {
     id: number;
     email: string;
-    name: string;
+    username: string;
 }
 
 declare module "express-serve-static-core" {

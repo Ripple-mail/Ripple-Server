@@ -19,7 +19,7 @@ router.post('/test', async (req, res) => {
     const valid = bcrypt.compare(password, user.passwordHash);
     if (!valid) return res.status(401).json({ status: 'error', error: 'Invalid credentials' });
 
-    const token = signJwt({ id: user.id, name: user.username, email: 'test~ripple.com' });
+    const token = signJwt({ id: user.id, username: user.username, email: 'test~ripple.com' });
     res.json({ token });
 });
 
@@ -47,7 +47,7 @@ router.post('/', async (req, res) => {
             return res.status(401).json({ status: 'error', error: 'Invalid credentials' });
         }
 
-        const token = signJwt({ id: user.id, name: user.username, email: user.email });
+        const token = signJwt({ id: user.id, username: user.username, email: user.email });
 
         await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
 
