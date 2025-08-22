@@ -1,6 +1,16 @@
 import { sql } from 'drizzle-orm';
-import { pgTable, pgEnum, serial, text, timestamp, integer, boolean, index, uniqueIndex, customType } from 'drizzle-orm/pg-core';
-import { createId } from '@paralleldrive/cuid2';
+import {
+    pgTable,
+    pgEnum,
+    serial,
+    text,
+    timestamp,
+    integer,
+    boolean,
+    index,
+    uniqueIndex,
+    customType
+} from 'drizzle-orm/pg-core';
 
 export const themeOptions = pgEnum('theme', ['light', 'dark', 'system']);
 
@@ -70,7 +80,7 @@ export const users = pgTable('users', {
     index('active_users_idx').on(table.username).where(sql`deleted_at IS NULL AND is_active = true`)
 ]);
 
-export const user_settings = pgTable('user_settings', {
+export const userSettings = pgTable('user_settings', {
     userId: integer('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
 
     // UI/Gen
@@ -98,32 +108,52 @@ export const mailboxes = pgTable('mailboxes', {
 
 export const emails = pgTable('emails', {
     id: serial('id').primaryKey(),
-    mailboxId: integer('mailbox_id').references(() => mailboxes.id).notNull(),
     senderId: integer('sender_id').references(() => users.id),
+    fromAddress: text('from_address'),
+    messageId: text('message_id').unique(),
     subject: text('subject'),
+    date: timestamp('date').defaultNow(),
     emlPath: text('eml_path').notNull(),
+    sizeBytes: integer('size_bytes'),
     bodyText: text('body_text'),
-    isRead: boolean('is_read').default(false),
-    hasAttachments: boolean('has_attachments').default(false),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
     deletedAt: timestamp('deleted_at'),
     searchVector: tsvector('search_vector')
 }, (table) => [
-    index('email_mailbox_idx').on(table.mailboxId),
     index('email_sender_idx').on(table.senderId),
-    index('email_mailbox_created_idx').on(table.mailboxId, table.createdAt)
+    index('email_created_idx').on(table.createdAt)
+]);
+
+export const userEmails = pgTable('user_emails', {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id).notNull(),
+    emailId: integer('email_id').references(() => emails.id).notNull(),
+    mailboxId: integer('mailbox_id').references(() => mailboxes.id).notNull(),
+
+    isRead: boolean('is_read').default(false),
+    isStarred: boolean('is_starred'),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+    deletedAt: timestamp('deleted_at')
+}, (table) => [
+    index('user_emails_user_idx').on(table.userId),
+    index('user_emails_mailbox_idx').on(table.mailboxId),
+    index('user_emails_email_idx').on(table.emailId),
+    uniqueIndex('user_emails_unique_idx').on(table.userId, table.emailId, table.mailboxId)
 ]);
 
 export const recipients = pgTable('recipients', {
     id: serial('id').primaryKey(),
     emailId: integer('email_id').references(() => emails.id).notNull(),
     userId: integer('user_id').references(() => users.id),
+    address: text('address'),
     type: rcptTypes('type').notNull()
 }, (table) => [
     index('recipient_email_idx').on(table.emailId),
     index('recipient_rcpt_idx').on(table.userId),
-    index('recipient_email_type_idx').on(table.emailId, table.type)
+    index('recipient_email_type_idx').on(table.emailId, table.type),
+    sql`ALTER TABLE "recipients" ADD CONSTRAINT recipients_target_chk CHECK (user_id IS NOT NULL OR address IS NOT NULL);`
 ]);
 
 export const attachments = pgTable('attachments', {
@@ -151,12 +181,12 @@ export const labels = pgTable('labels', {
 
 export const emailLabels = pgTable('email_labels', {
     id: serial('id').primaryKey(),
-    emailId: integer('email_id').references(() => emails.id).notNull(),
-    labelId: integer('label_id').references(() => labels.id).notNull()
+    userEmailId: integer('user_email_id').references(() => userEmails.id, { onDelete: 'cascade' }).notNull(),
+    labelId: integer('label_id').references(() => labels.id, { onDelete: 'cascade' }).notNull()
 }, (table) => [
-    index('email_label_email_idx').on(table.emailId),
+    index('email_label_user_email_idx').on(table.userEmailId),
     index('email_label_label_idx').on(table.labelId),
-    uniqueIndex('email_label_unique_idx').on(table.emailId, table.labelId)
+    uniqueIndex('email_label_unique_idx').on(table.userEmailId, table.labelId)
 ]);
 
 export const auditLogs = pgTable('audit_logs', {

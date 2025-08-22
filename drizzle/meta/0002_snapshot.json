@@ -1,6 +1,6 @@
 {
-  "id": "3926836a-a299-459b-ae79-c191f9b03296",
-  "prevId": "48716916-ea03-4a45-b62a-14066ff3f5e2",
+  "id": "a6e8d06a-8c31-444d-8d97-d9f11b877a80",
+  "prevId": "29e148d8-95c8-4f1f-a3de-c4f0af3fbcbc",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -177,8 +177,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "email_id": {
-          "name": "email_id",
+        "user_email_id": {
+          "name": "user_email_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -191,11 +191,11 @@
         }
       },
       "indexes": {
-        "email_label_email_idx": {
-          "name": "email_label_email_idx",
+        "email_label_user_email_idx": {
+          "name": "email_label_user_email_idx",
           "columns": [
             {
-              "expression": "email_id",
+              "expression": "user_email_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -225,7 +225,7 @@
           "name": "email_label_unique_idx",
           "columns": [
             {
-              "expression": "email_id",
+              "expression": "user_email_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -244,18 +244,18 @@
         }
       },
       "foreignKeys": {
-        "email_labels_email_id_emails_id_fk": {
-          "name": "email_labels_email_id_emails_id_fk",
+        "email_labels_user_email_id_user_emails_id_fk": {
+          "name": "email_labels_user_email_id_user_emails_id_fk",
           "tableFrom": "email_labels",
           "columnsFrom": [
-            "email_id"
+            "user_email_id"
           ],
-          "tableTo": "emails",
+          "tableTo": "user_emails",
           "columnsTo": [
             "id"
           ],
           "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "cascade"
         },
         "email_labels_label_id_labels_id_fk": {
           "name": "email_labels_label_id_labels_id_fk",
@@ -268,7 +268,7 @@
             "id"
           ],
           "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
@@ -287,15 +287,21 @@
           "primaryKey": true,
           "notNull": true
         },
-        "mailbox_id": {
-          "name": "mailbox_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
         "sender_id": {
           "name": "sender_id",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "from_address": {
+          "name": "from_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message_id": {
+          "name": "message_id",
+          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -305,31 +311,30 @@
           "primaryKey": false,
           "notNull": false
         },
+        "date": {
+          "name": "date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
         "eml_path": {
           "name": "eml_path",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
+        "size_bytes": {
+          "name": "size_bytes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "body_text": {
           "name": "body_text",
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "is_read": {
-          "name": "is_read",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "has_attachments": {
-          "name": "has_attachments",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -359,21 +364,6 @@
         }
       },
       "indexes": {
-        "email_mailbox_idx": {
-          "name": "email_mailbox_idx",
-          "columns": [
-            {
-              "expression": "mailbox_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "with": {},
-          "method": "btree",
-          "concurrently": false
-        },
         "email_sender_idx": {
           "name": "email_sender_idx",
           "columns": [
@@ -389,15 +379,9 @@
           "method": "btree",
           "concurrently": false
         },
-        "email_mailbox_created_idx": {
-          "name": "email_mailbox_created_idx",
+        "email_created_idx": {
+          "name": "email_created_idx",
           "columns": [
-            {
-              "expression": "mailbox_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
             {
               "expression": "created_at",
               "isExpression": false,
@@ -412,19 +396,6 @@
         }
       },
       "foreignKeys": {
-        "emails_mailbox_id_mailboxes_id_fk": {
-          "name": "emails_mailbox_id_mailboxes_id_fk",
-          "tableFrom": "emails",
-          "columnsFrom": [
-            "mailbox_id"
-          ],
-          "tableTo": "mailboxes",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
-        },
         "emails_sender_id_users_id_fk": {
           "name": "emails_sender_id_users_id_fk",
           "tableFrom": "emails",
@@ -440,7 +411,15 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "emails_message_id_unique": {
+          "name": "emails_message_id_unique",
+          "columns": [
+            "message_id"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -664,6 +643,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "type": {
           "name": "type",
           "type": "rcpt_types",
@@ -746,6 +731,189 @@
             "user_id"
           ],
           "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_emails": {
+      "name": "user_emails",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email_id": {
+          "name": "email_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mailbox_id": {
+          "name": "mailbox_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "is_starred": {
+          "name": "is_starred",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "user_emails_user_idx": {
+          "name": "user_emails_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "user_emails_mailbox_idx": {
+          "name": "user_emails_mailbox_idx",
+          "columns": [
+            {
+              "expression": "mailbox_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "user_emails_email_idx": {
+          "name": "user_emails_email_idx",
+          "columns": [
+            {
+              "expression": "email_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "user_emails_unique_idx": {
+          "name": "user_emails_unique_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "email_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "mailbox_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "user_emails_user_id_users_id_fk": {
+          "name": "user_emails_user_id_users_id_fk",
+          "tableFrom": "user_emails",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "user_emails_email_id_emails_id_fk": {
+          "name": "user_emails_email_id_emails_id_fk",
+          "tableFrom": "user_emails",
+          "columnsFrom": [
+            "email_id"
+          ],
+          "tableTo": "emails",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "user_emails_mailbox_id_mailboxes_id_fk": {
+          "name": "user_emails_mailbox_id_mailboxes_id_fk",
+          "tableFrom": "user_emails",
+          "columnsFrom": [
+            "mailbox_id"
+          ],
+          "tableTo": "mailboxes",
           "columnsTo": [
             "id"
           ],

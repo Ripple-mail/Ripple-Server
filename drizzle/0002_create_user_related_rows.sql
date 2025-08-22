@@ -6,15 +6,14 @@ BEGIN
   INSERT INTO mailboxes (user_id, name, mailbox_type, system_mailbox)
   VALUES
     (NEW.id, 'Inbox', 'inbox', true),
-    (NEW.id, 'Sent', 'inbox', true),
-    (NEW.id, 'Drafts', 'inbox', true),
-    (NEW.id, 'Trash', 'inbox', true);
+    (NEW.id, 'Sent', 'sent', true),
+    (NEW.id, 'Drafts', 'draft', true),
+    (NEW.id, 'Trash', 'trash', true);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 --> statement-breakpoint
 DROP TRIGGER IF EXISTS after_user_insert ON users;--> statement-breakpoint
-CREATE TRIGGER after_user_insert--> statement-breakpoint
+CREATE TRIGGER after_user_insert
 AFTER INSERT ON users
-FOR EACH ROW
-EXECUTE FUNCTION create_user_related_rows();
+FOR EACH ROW EXECUTE FUNCTION create_user_related_rows();

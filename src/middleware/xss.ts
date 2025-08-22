@@ -60,6 +60,6 @@ export function xssSanitizer(req: Request, res: Response, next: NextFunction) {
             }
         }
     }
-    
+
     next();
 }
