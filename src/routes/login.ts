@@ -30,6 +30,12 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ status: 'error', error: 'Email/username and password required' });
     }
 
+    const userAgent = req.headers['user-agent'] || '';
+    const clientIp = req.ips.length ? req.ips[0] : req.ip;
+    if (clientIp && !net.isIP(clientIp)) {
+        return res.status(400).json({ status: 'error', error: 'Invalid IP address' });
+    }
+
     try {
         const user = await db.query.users.findFirst({
             where: or(
@@ -48,6 +54,16 @@ router.post('/', async (req, res) => {
 
         const passwordMatch = await argon2.verify(user.passwordHash, password);
         if (!passwordMatch) {
+            await db.insert(auditLogs).values({
+                userId: user.id,
+                action: 'Login attempt failed',
+                actionType: 'failed_login_attempt',
+                metadata: JSON.stringify({
+                    method: 'password',
+                    agent: userAgent
+                }),
+                ipAddress: clientIp
+            });
             return res.status(401).json({ status: 'error', error: 'Invalid credentials' });
         }
 
@@ -58,12 +74,6 @@ router.post('/', async (req, res) => {
         const token = signJwt({ id: user.id, username: user.username, email: user.email });
 
         await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
-
-        const userAgent = req.headers['user-agent'] || '';
-        const clientIp = req.ips.length ? req.ips[0] : req.ip;
-        if (clientIp && !net.isIP(clientIp)) {
-            return res.status(400).json({ status: 'error', error: 'Invalid IP address' });
-        }
 
         await db.insert(auditLogs).values({
             userId: user.id,
