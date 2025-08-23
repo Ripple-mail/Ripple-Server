@@ -2,17 +2,13 @@ import express, { Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { db } from '../../db/db';
 import { eq, inArray, sql, and } from 'drizzle-orm';
-import { emails, mailboxes, userEmails } from '../../db/schema';
+import { auditLogs, emails, mailboxes, userEmails } from '../../db/schema';
+import net from 'node:net';
 
 const router: Router = express.Router();
 
-router.get('/', async (req, res) => {
-    /* if (!req.user) {
-        return res.status(401).json({ status: 'error', error: 'User not authenticated' });
-    } */
-   if (!req.user) {
-        req.user = { id: 2, username: 'ultraslayyy', email: 'ultra~ripple.com' }
-   }
+router.get('/', authMiddleware, async (req, res) => {
+   if (!req.user) return;
 
     try {
         let mailboxIds: number[];
@@ -99,6 +95,33 @@ router.get('/', async (req, res) => {
 
             return res.status(200).json({ status: 'success', data: userMailboxEmails });
         }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
+    }
+});
+
+router.post('/send', authMiddleware, async (req, res) => {
+    if (!req.user) return;
+
+    try {
+        // Send email here
+
+        const userAgent = req.headers['user-agent'] || '';
+        const clientIp = req.ips.length ? req.ips[0] : req.ip;
+        if (clientIp && !net.isIP(clientIp)) {
+            return res.status(400).json({ status: 'error', error: 'Invalid IP address' });
+        }
+
+        await db.insert(auditLogs).values({
+            userId: req.user.id,
+            action: 'Email sent successfully',
+            actionType: 'send_email',
+            metadata: JSON.stringify({
+                agent: userAgent
+            }),
+            ipAddress: clientIp
+        });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ status: 'error', error: 'Internal Server Error' });

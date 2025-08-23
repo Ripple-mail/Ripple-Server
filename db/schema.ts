@@ -133,6 +133,7 @@ export const userEmails = pgTable('user_emails', {
 
     isRead: boolean('is_read').default(false),
     isStarred: boolean('is_starred'),
+    isSender: boolean('is_sender').default(false),
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
     deletedAt: timestamp('deleted_at')
