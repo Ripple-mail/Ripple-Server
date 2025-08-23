@@ -4,6 +4,7 @@ import { db } from '../../db/db';
 import { eq, inArray, sql, and } from 'drizzle-orm';
 import { auditLogs, emails, mailboxes, userEmails } from '../../db/schema';
 import net from 'node:net';
+import { saveEmail } from '../utils/saveEmail';
 
 const router: Router = express.Router();
 
@@ -103,9 +104,10 @@ router.get('/', authMiddleware, async (req, res) => {
 
 router.post('/send', authMiddleware, async (req, res) => {
     if (!req.user) return;
+    const { from, recipients, subject, body: bodyText } = req.body;
 
     try {
-        // Send email here
+        const email = await saveEmail({ sender: from, subject, bodyText, recipients });
 
         const userAgent = req.headers['user-agent'] || '';
         const clientIp = req.ips.length ? req.ips[0] : req.ip;
@@ -118,10 +120,13 @@ router.post('/send', authMiddleware, async (req, res) => {
             action: 'Email sent successfully',
             actionType: 'send_email',
             metadata: JSON.stringify({
+                email,
                 agent: userAgent
             }),
             ipAddress: clientIp
         });
+
+        return res.status(201).json({ status: 'success', email });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ status: 'error', error: 'Internal Server Error' });

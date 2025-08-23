@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { signJwt } from '../utils/jwt';
-import { auditLogs, users } from '../../db/schema';
+import { auditLogs, users, userSettings } from '../../db/schema';
 import { db } from '../../db/db';
 import { eq, or } from 'drizzle-orm';
 import argon2 from 'argon2';
@@ -42,9 +42,17 @@ router.post('/', async (req, res) => {
             return res.status(401).json({ status: 'error', error: 'Invalid credentials' });
         }
 
+        const usersSettings = await db.query.userSettings.findFirst({
+            where: eq(userSettings.userId, user.id)
+        });
+
         const passwordMatch = await argon2.verify(user.passwordHash, password);
         if (!passwordMatch) {
             return res.status(401).json({ status: 'error', error: 'Invalid credentials' });
+        }
+
+        if (usersSettings && usersSettings.mfaEnabled) {
+            return res.status(200).json({ status: 'mfa_required', methods: usersSettings.mfaMethods /* Send some kind of code that links with mfa to verify user login attempt on mfa */ });
         }
 
         const token = signJwt({ id: user.id, username: user.username, email: user.email });

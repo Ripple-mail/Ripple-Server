@@ -14,7 +14,7 @@ import {
 
 export const themeOptions = pgEnum('theme', ['light', 'dark', 'system']);
 
-export const mfaMethods = pgEnum('mfa_method', ['otp', 'webauthn', 'both']);
+export const mfaMethods = pgEnum('mfa_method', ['otp', 'webauthn']);
 
 export const rcptTypes = pgEnum('rcpt_types', [
     'to',
@@ -89,7 +89,7 @@ export const userSettings = pgTable('user_settings', {
 
     // MFA
     mfaEnabled: boolean('mfa_enabled').default(false).notNull(),
-    mfaMethod: mfaMethods(),
+    mfaMethods: mfaMethods().array(),
 });
 
 export const mailboxes = pgTable('mailboxes', {

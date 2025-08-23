@@ -1,8 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { Base64Encode } from 'base64-stream';
-import { Transform, pipeline } from 'node:stream';
 import { db } from '../../db/db';
 import { attachments, emails, mailboxes, recipients, userEmails, users } from '../../db/schema';
 import { and, eq } from 'drizzle-orm';
