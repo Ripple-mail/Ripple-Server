@@ -15,38 +15,6 @@ function createBoundary() {
     return `----=_Part_${crypto.randomBytes(16).toString('hex')}`;
 }
 
-function chunkBase64Stream(length = 76) {
-    let buffer = '';
-    return new Transform({
-        transform(chunk, encoding, callback) {
-            buffer += chunk.toString();
-            while (buffer.length >= length) {
-                this.push(buffer.slice(0, length) + '\r\n');
-                buffer = buffer.slice(length);
-            }
-            callback();
-        },
-        flush(callback) {
-            if (buffer.length > 0) this.push(buffer + '\r\n');
-            callback();
-        }
-    });
-}
-
-function encodeFileBase64(filePath: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const chunks: string[] = [];
-        const readStream = fs.createReadStream(filePath);
-        const base64Stream = readStream.pipe(new Base64Encode().pipe(chunkBase64Stream()));
-
-        base64Stream.on('data', (chunk: Buffer | string) => {
-            chunks.push(chunk.toString());
-        });
-        base64Stream.on('end', () => resolve(chunks.join('\r\n')));
-        base64Stream.on('error', reject);
-    });
-}
-
 async function constructRcptHeader(recipients: { userId?: number; email?: string; type: 'to' | 'cc' | 'bcc' }[], rtype: 'to' | 'cc') {
     const headerArray = await Promise.all(recipients.filter(r => r.type === rtype).map(async r => {
         if (r.email) return r.email;
@@ -96,13 +64,10 @@ export async function saveEmail(emailData: {
         body += `${emailData.bodyText || ''}\r\n\r\n`;
 
         for (const att of emailData.attachments!) {
-            const base64 = await encodeFileBase64(att.filePath);
-
             body += `--${boundary}`;
             body += `Content-Type: ${att.mimeType}; name="${att.fileName}"\r\n`;
-            body += `Content-Transfer-Encoding: base64\r\n`;
             body += `Content-Disposition: attachment; filename="${att.fileName}"\r\n\r\n`;
-            body += `${base64}\r\n\r\n`;
+            body += `X-Local-File-Path: ${att.filePath}\r\n\r\n`;
         }
 
         body += `--${boundary}--\r\n`;
