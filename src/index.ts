@@ -1,4 +1,4 @@
-import express, { Express} from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import path from 'node:path';
 import fs from 'node:fs';

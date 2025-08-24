@@ -1,4 +1,4 @@
-import express, { Router} from 'express';
+import express, { Router } from 'express';
 import argon2 from 'argon2';
 import { db } from '../../db/db';
 import { eq, or } from 'drizzle-orm';
@@ -62,3 +62,5 @@ router.post('/', async (req, res) => {
         return res.status(500).json({ status: 'error', error: 'Internal server error' });
     }
 });
+
+export default router;
