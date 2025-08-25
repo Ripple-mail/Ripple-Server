@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { db } from '../../db/db';
-import { eq, inArray, sql, and } from 'drizzle-orm';
+import { eq, inArray, sql, and, isNull } from 'drizzle-orm';
 import { auditLogs, emails, mailboxes, userEmails } from '../../db/schema';
 import net from 'node:net';
 import { saveEmail } from '../utils/saveEmail';
@@ -73,7 +73,8 @@ router.get('/', authMiddleware, async (req, res) => {
                                 AND r.address ILIKE '%' || ${term} || '%'
                             )
                           )
-                        `
+                        `,
+                        isNull(userEmails.deletedAt)
                     )
                 )
                 .groupBy(emails.id, userEmails.mailboxId)
@@ -88,7 +89,8 @@ router.get('/', authMiddleware, async (req, res) => {
                 .where(
                     and(
                         eq(userEmails.userId, req.user.id),
-                        inArray(userEmails.mailboxId, mailboxIds)
+                        inArray(userEmails.mailboxId, mailboxIds),
+                        isNull(userEmails.deletedAt)
                     )
                 )
                 .orderBy(emails.createdAt);
