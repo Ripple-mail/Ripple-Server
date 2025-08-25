@@ -93,7 +93,6 @@ router.get('/', authMiddleware, async (req, res) => {
                 )
                 .orderBy(emails.createdAt);
 
-
             return res.status(200).json({ status: 'success', data: userMailboxEmails });
         }
     } catch (err) {
@@ -104,12 +103,12 @@ router.get('/', authMiddleware, async (req, res) => {
 
 router.post('/send', authMiddleware, async (req, res) => {
     if (!req.user) return;
-    const { from, recipients, subject, body: bodyText } = req.body;
+    const { from: sender, recipients, subject, body: bodyText } = req.body;
 
     try {
-        const email = await saveEmail({ sender: from, subject, bodyText, recipients });
+        const email = await saveEmail({ sender, subject, bodyText, recipients });
 
-        const userAgent = req.headers['user-agent'] || '';
+        const userAgent = req.headers['user-agent'] || ''; // Just so I don't forget, user-agent will be `okhttp/{version}` when sent from Mobile-App.
         const clientIp = req.ips.length ? req.ips[0] : req.ip;
         if (clientIp && !net.isIP(clientIp)) {
             return res.status(400).json({ status: 'error', error: 'Invalid IP address' });
@@ -120,13 +119,53 @@ router.post('/send', authMiddleware, async (req, res) => {
             action: 'Email sent successfully',
             actionType: 'send_email',
             metadata: JSON.stringify({
-                email,
+                email: {
+                    id: email.id,
+                    emlPath: email.emlPath
+                },
                 agent: userAgent
             }),
-            ipAddress: clientIp
+            ipAddress: clientIp,
+            createdAt: email.createdAt ?? new Date()
         });
 
         return res.status(201).json({ status: 'success', email });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
+    }
+});
+
+router.delete('/:emailId', authMiddleware, async (req, res) => {
+    if (!req.user) return;
+    const emailId = Number(req.params.emailId.split('?')[0]);
+
+    if (isNaN(emailId)) return res.status(400).json({ status: 'error', error: 'emailId must be a number' });
+
+    const timeNow = new Date();
+
+    try {
+        await db
+            .update(userEmails)
+            .set({ deletedAt: timeNow })
+            .where(
+                and(
+                    eq(userEmails.userId, req.user.id),
+                    eq(userEmails.emailId, emailId)
+                )
+            );
+
+        const userAgent = req.headers['user-agent'] || '';
+        await db.insert(auditLogs).values({
+            userId: req.user.id,
+            action: 'Email deleted successfully',
+            actionType: 'delete_email',
+            metadata: JSON.stringify({
+                emailId,
+                agent: userAgent
+            }),
+            createdAt: timeNow
+        });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
