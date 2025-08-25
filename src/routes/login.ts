@@ -99,7 +99,7 @@ router.post('/', async (req, res) => {
         return res.json({ status: 'success', message: 'Login successful', token });
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ status: 'error', error: 'Internal server error' });
+        return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
     }
 });
 

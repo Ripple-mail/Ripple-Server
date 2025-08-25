@@ -34,11 +34,11 @@ router.post('/', async (req, res) => {
 
         const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
 
-        const user = (await db.insert(users).values({
+        const [user] = await db.insert(users).values({
             username,
             email,
             passwordHash
-        }).returning({ id: users.id }))[0];
+        }).returning({ id: users.id });
 
         const userAgent = req.headers['user-agent'] || '';
         const clientIp = req.ips.length ? req.ips[0] : req.ip;
