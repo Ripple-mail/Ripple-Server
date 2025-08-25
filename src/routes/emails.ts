@@ -138,7 +138,7 @@ router.post('/send', authMiddleware, async (req, res) => {
     }
 });
 
-router.delete('/:emailId', authMiddleware, async (req, res) => {
+/* router.delete('/:emailId', authMiddleware, async (req, res) => {
     if (!req.user) return;
     const emailId = Number(req.params.emailId.split('?')[0]);
 
@@ -172,6 +172,6 @@ router.delete('/:emailId', authMiddleware, async (req, res) => {
         console.error(err);
         return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
     }
-});
+}); */
 
 export default router;
