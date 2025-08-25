@@ -1,65 +1,44 @@
 import { Request, Response, NextFunction } from 'express';
+import createDomPurify, { Config as XSSConfig } from 'dompurify';
+import { JSDOM } from 'jsdom';
 
-const dangerousTags = ['script', 'iframe', 'object', 'embed', 'link', 'meta', 'style'];
+const window = new JSDOM('').window;
+const DOMPurify = createDomPurify(window);
 
-function sanitizeHTML(str: string): string {
-    dangerousTags.forEach(tag => {
-        const regex = new RegExp(`<${tag}.*?>.*?<\\/${tag}>`, 'gi');
-        str = str.replace(regex, '');
-        const selfClosing = new RegExp(`<${tag}.*?\\/?>`, 'gi');
-        str = str.replace(selfClosing, '');
-    });
+const plainTextConfig: XSSConfig = { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }
 
-    str = str.replace(/\son\w+=".*?"/gi, '');
-    str = str.replace(/\son\w+='.*?'/gi, '');
-
-    str = str.replace(/\s(href|src)\s*=\s*['"]?\s*(javascript:|data:)[^'"]*['"]?/gi, '');
-
-    str = str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#x27;')
-        .replace(/\//g, '&#x2F;');
-
-    return str;
+const safeHTMLConfig: XSSConfig = {
+    ALLOWED_TAGS: [
+        'b', 'i', 'em', 'strong', 'u',
+        'a', 'p', 'br', 'ul', 'ol', 'li',
+        'blockquote', 'code', 'pre', 'span'
+    ],
+    ALLOWED_ATTR: ['href', 'title'],
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
 }
 
-function sanitizeObject(obj: any): any {
-    if (typeof obj === 'string') {
-        return sanitizeHTML(obj);
-    } else if (Array.isArray(obj)) {
-        return obj.map(sanitizeObject);
-    } else if (typeof obj === 'object' && obj !== null) {
-        const sanitized: any = {};
-        for (const key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                sanitized[key] = sanitizeObject(obj[key]);
+const CURRENT_CONFIG = plainTextConfig;
+
+export function sanitizeInput(input: any): any {
+    if (typeof input === 'string') {
+        return DOMPurify.sanitize(input, CURRENT_CONFIG);
+    } else if (Array.isArray(input)) {
+        return input.map(sanitizeInput);
+    } else if (typeof input === 'object' && input !== null) {
+        const sanitized: Record<string, any> = {}
+        for (const key in input) {
+            if (Object.prototype.hasOwnProperty.call(input, key)) {
+                sanitized[key] = sanitizeInput(input[key]);
             }
         }
         return sanitized;
     }
-    return obj;
+    return input;
 }
 
 export function xssSanitizer(req: Request, res: Response, next: NextFunction) {
-    if (req.body) req.body = sanitizeObject(req.body);
-    if (req.query) {
-        for (const key in req.query) {
-            if (Object.prototype.hasOwnProperty.call(req.query, key)) {
-                req.query[key] = sanitizeObject(req.query[key]);
-            }
-        }
-    }
-
-    if (req.params) {
-        for (const key in req.params) {
-            if (Object.prototype.hasOwnProperty.call(req.params, key)) {
-                req.params[key] = sanitizeObject(req.params[key]);
-            }
-        }
-    }
-
+    if (req.body) req.body = sanitizeInput(req.body ?? {});
+    if (req.query) req.query = sanitizeInput(req.query ?? {});
+    if (req.params) req.params = sanitizeInput(req.params ?? {});
     next();
 }
