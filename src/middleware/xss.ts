@@ -38,7 +38,19 @@ export function sanitizeInput(input: any): any {
 
 export function xssSanitizer(req: Request, res: Response, next: NextFunction) {
     if (req.body) req.body = sanitizeInput(req.body ?? {});
-    if (req.query) req.query = sanitizeInput(req.query ?? {});
-    if (req.params) req.params = sanitizeInput(req.params ?? {});
+
+    if (req.query) {
+        const sanitizedQuery = sanitizeInput(req.query ?? {});
+        for (const key in sanitizedQuery) {
+            (req.query as any)[key] = sanitizedQuery[key];
+        }
+    }
+
+    if (req.params) {
+        const sanitizedParams = sanitizeInput(req.params ?? {});
+        for (const key in sanitizedParams) {
+            (req.params as any)[key] = sanitizedParams[key];
+        }
+    }
     next();
 }
