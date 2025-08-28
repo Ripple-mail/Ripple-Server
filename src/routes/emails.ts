@@ -9,7 +9,7 @@ import { saveEmail } from '../utils/saveEmail';
 const router: Router = express.Router();
 
 router.get('/', authMiddleware, async (req, res) => {
-   if (!req.user) return;
+    if (!req.user) return;
 
     try {
         let mailboxIds: number[];

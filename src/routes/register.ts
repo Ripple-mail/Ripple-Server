@@ -46,6 +46,16 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ status: 'error', error: 'Invalid IP address' });
         }
 
+        const mailboxTypes = ['Inbox', 'Sent', 'Draft', 'Trash'];
+        const mailboxesToCreate = mailboxTypes.map(name => ({
+            userId: user.id,
+            name: name,
+            mailboxType: name.toLowerCase() as 'inbox' | 'sent' | 'draft' | 'trash',
+            systemMailbox: true,
+        }));
+
+        await db.insert(mailboxes).values(mailboxesToCreate);
+
         await db.insert(auditLogs).values({
             userId: user.id,
             action: 'User registerd succesfully',
