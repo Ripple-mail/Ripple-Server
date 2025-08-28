@@ -2,7 +2,7 @@ import express, { Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { db } from '../../db/db';
 import { eq, inArray, sql, and, isNull } from 'drizzle-orm';
-import { auditLogs, emails, mailboxes, userEmails } from '../../db/schema';
+import { auditLogs, emails, mailboxes, userEmails, recipients } from '../../db/schema';
 import net from 'node:net';
 import { saveEmail } from '../utils/saveEmail';
 
@@ -16,7 +16,10 @@ router.get('/', authMiddleware, async (req, res) => {
 
         if (!req.query.mailboxId) {
             const userMailboxes = await db.query.mailboxes.findMany({
-                where: eq(mailboxes.userId, req.user.id),
+                where: and(
+                    eq(mailboxes.userId, req.user.id),
+                    isNull(mailboxes.deletedAt)
+                ),
             });
 
             if (userMailboxes.length === 0) {
@@ -25,7 +28,17 @@ router.get('/', authMiddleware, async (req, res) => {
 
             mailboxIds = userMailboxes.map(mb => mb.id);
         } else {
-            mailboxIds = [Number(req.query.mailboxId)];
+            const mailboxId = Number(req.query.mailboxId);
+            if (isNaN(mailboxId)) {
+                return res.status(400).json({ status: 'error', error: 'Invalid mailboxId' });
+            }
+            const mailbox = await db.query.mailboxes.findFirst({
+                where: and(eq(mailboxes.id, mailboxId), eq(mailboxes.userId, req.user.id))
+            });
+            if (!mailbox) {
+                return res.status(404).json({ status: 'error', error: 'Mailbox not found or access denied' });
+            }
+            mailboxIds = [mailboxId];
         }
 
         if (req.query.query) {
