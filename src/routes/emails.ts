@@ -96,7 +96,17 @@ router.get('/', authMiddleware, async (req, res) => {
             return res.status(200).json({ status: 'success', data: results });
         } else {
             const userMailboxEmails = await db
-                .select()
+                .select({
+                    user_emails: userEmails,
+                    emails: emails,
+                    recipients: sql<string[]>`
+                        ARRAY(
+                            SELECT r.address
+                            FROM recipients r
+                            WHERE r.email_id = emails.id AND r.type IN ('to', 'cc')
+                        )
+                    `.as('recipients')
+                })
                 .from(userEmails)
                 .innerJoin(emails, eq(userEmails.emailId, emails.id))
                 .where(

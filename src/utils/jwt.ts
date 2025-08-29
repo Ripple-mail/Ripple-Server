@@ -3,7 +3,7 @@ import type { JwtUser } from '../../types/express';
 
 const SECRET = process.env.JWT_SECRET || 'super-secret-key';
 
-export function signJwt(payload: JwtUser, expiresIn: SignOptions['expiresIn'] = '30m') {
+export function signJwt(payload: JwtUser, expiresIn: SignOptions['expiresIn'] = '2h') {
     return jwt.sign(payload, SECRET, { expiresIn });
 }
 

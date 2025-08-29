@@ -116,14 +116,26 @@ export async function saveEmail(emailData: {
             });
 
             for (const recipient of emailData.recipients) {
-                if (!recipient.userId) continue;
+                let recipientUser = null;
+                if (recipient.email) {
+                    [recipientUser] = await tx.select().from(users).where(eq(users.email, recipient.email));
+                }
+
+                await tx.insert(recipients).values({
+                    emailId: insertedEmail.id,
+                    userId: recipientUser ? recipientUser.id : null,
+                    address: recipient.email,
+                    type: recipient.type
+                });
+
+                if (!recipientUser) continue;
 
                 const [inbox] = await tx
                     .select()
                     .from(mailboxes)
                     .where(
                         and(
-                            eq(mailboxes.userId, recipient.userId),
+                            eq(mailboxes.userId, recipientUser.id),
                             eq(mailboxes.mailboxType, 'inbox'),
                             eq(mailboxes.systemMailbox, true)
                         )
@@ -131,16 +143,9 @@ export async function saveEmail(emailData: {
                 if (!inbox) continue;
 
                 await tx.insert(userEmails).values({
-                    userId: recipient.userId,
+                    userId: recipientUser.id,
                     emailId: insertedEmail.id,
                     mailboxId: inbox.id
-                });
-
-                await tx.insert(recipients).values({
-                    emailId: insertedEmail.id,
-                    userId: recipient.userId,
-                    address: recipient.email,
-                    type: recipient.type
                 });
             }
 
