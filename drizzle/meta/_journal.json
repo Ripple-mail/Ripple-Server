@@ -34,7 +34,7 @@
       "idx": 4,
       "version": "7",
       "when": 1756926788441,
-      "tag": "0004_aberrant_stingray",
+      "tag": "0004_change_serial_to_uuid",
       "breakpoints": true
     }
   ]
