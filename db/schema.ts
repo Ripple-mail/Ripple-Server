@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
     pgTable,
     pgEnum,
-    serial,
+    uuid,
     text,
     timestamp,
     integer,
@@ -65,7 +65,7 @@ const tsvector = customType<{ data: string; notNull: false; default: false; }>({
 });
 
 export const users = pgTable('users', {
-    id: serial('id').primaryKey(),
+    id: uuid('id').defaultRandom().primaryKey(),
     username: text('username').notNull().unique(),
     email: text('email').notNull().unique(),
     passwordHash: text('password_hash').notNull(),
@@ -81,7 +81,7 @@ export const users = pgTable('users', {
 ]);
 
 export const userSettings = pgTable('user_settings', {
-    userId: integer('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
 
     // UI/Gen
     theme: themeOptions().default('light').notNull(),
@@ -93,8 +93,8 @@ export const userSettings = pgTable('user_settings', {
 });
 
 export const mailboxes = pgTable('mailboxes', {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
     name: text('name').notNull(),
     mailboxType: mailboxTypes('mailbox_type').default('inbox'),
     systemMailbox: boolean('system_mailbox').default(false),
@@ -107,8 +107,8 @@ export const mailboxes = pgTable('mailboxes', {
 ]);
 
 export const emails = pgTable('emails', {
-    id: serial('id').primaryKey(),
-    senderId: integer('sender_id').references(() => users.id),
+    id: uuid('id').defaultRandom().primaryKey(),
+    senderId: uuid('sender_id').references(() => users.id),
     fromAddress: text('from_address'),
     messageId: text('message_id').unique(),
     subject: text('subject'),
@@ -126,10 +126,10 @@ export const emails = pgTable('emails', {
 ]);
 
 export const userEmails = pgTable('user_emails', {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => users.id).notNull(),
-    emailId: integer('email_id').references(() => emails.id).notNull(),
-    mailboxId: integer('mailbox_id').references(() => mailboxes.id).notNull(),
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id).notNull(),
+    emailId: uuid('email_id').references(() => emails.id).notNull(),
+    mailboxId: uuid('mailbox_id').references(() => mailboxes.id).notNull(),
 
     isRead: boolean('is_read').default(false),
     isStarred: boolean('is_starred'),
@@ -145,9 +145,9 @@ export const userEmails = pgTable('user_emails', {
 ]);
 
 export const recipients = pgTable('recipients', {
-    id: serial('id').primaryKey(),
-    emailId: integer('email_id').references(() => emails.id).notNull(),
-    userId: integer('user_id').references(() => users.id),
+    id: uuid('id').defaultRandom().primaryKey(),
+    emailId: uuid('email_id').references(() => emails.id).notNull(),
+    userId: uuid('user_id').references(() => users.id),
     address: text('address'),
     type: rcptTypes('type').notNull()
 }, (table) => [
@@ -158,8 +158,8 @@ export const recipients = pgTable('recipients', {
 ]);
 
 export const attachments = pgTable('attachments', {
-    id: serial('id').primaryKey(),
-    emailId: integer('email_id').references(() => emails.id).notNull(),
+    id: uuid('id').defaultRandom().primaryKey(),
+    emailId: uuid('email_id').references(() => emails.id).notNull(),
     fileName: text('file_name').notNull(),
     filePath: text('file_path').notNull(),
     mimeType: text('mime_type').notNull(),
@@ -171,8 +171,8 @@ export const attachments = pgTable('attachments', {
 ]);
 
 export const labels = pgTable('labels', {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => users.id).notNull(),
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id).notNull(),
     name: text('name').notNull(),
     color: text('color'),
     createdAt: timestamp('created_at').defaultNow()
@@ -181,9 +181,9 @@ export const labels = pgTable('labels', {
 ]);
 
 export const emailLabels = pgTable('email_labels', {
-    id: serial('id').primaryKey(),
-    userEmailId: integer('user_email_id').references(() => userEmails.id, { onDelete: 'cascade' }).notNull(),
-    labelId: integer('label_id').references(() => labels.id, { onDelete: 'cascade' }).notNull()
+    id: uuid('id').defaultRandom().primaryKey(),
+    userEmailId: uuid('user_email_id').references(() => userEmails.id, { onDelete: 'cascade' }).notNull(),
+    labelId: uuid('label_id').references(() => labels.id, { onDelete: 'cascade' }).notNull()
 }, (table) => [
     index('email_label_user_email_idx').on(table.userEmailId),
     index('email_label_label_idx').on(table.labelId),
@@ -191,8 +191,8 @@ export const emailLabels = pgTable('email_labels', {
 ]);
 
 export const auditLogs = pgTable('audit_logs', {
-    id: serial('id').primaryKey(),
-    userId: integer('user_id').references(() => users.id),
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id),
     action: text('action').notNull(),
     actionType: actionTypes('action_type').notNull(),
     ipAddress: text('ip_address'),

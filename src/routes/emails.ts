@@ -12,7 +12,7 @@ router.get('/', authMiddleware, async (req, res) => {
     if (!req.user) return;
 
     try {
-        let mailboxIds: number[];
+        let mailboxIds: string[];
 
         if (!req.query.mailboxId) {
             const userMailboxes = await db.query.mailboxes.findMany({
@@ -28,10 +28,8 @@ router.get('/', authMiddleware, async (req, res) => {
 
             mailboxIds = userMailboxes.map(mb => mb.id);
         } else {
-            const mailboxId = Number(req.query.mailboxId);
-            if (isNaN(mailboxId)) {
-                return res.status(400).json({ status: 'error', error: 'Invalid mailboxId' });
-            }
+            const mailboxId = req.query.mailboxId as string;
+            
             const mailbox = await db.query.mailboxes.findFirst({
                 where: and(eq(mailboxes.id, mailboxId), eq(mailboxes.userId, req.user.id))
             });
@@ -42,7 +40,7 @@ router.get('/', authMiddleware, async (req, res) => {
         }
 
         if (req.query.query) {
-            const term = String(req.query.query ?? '');
+            const term = (req.query.query as string) ?? '';
             if (term.trim().length === 0) {
                 return res.status(400).json({ status: 'error', error: 'Search terms cannot be empty' });
             }
@@ -122,6 +120,49 @@ router.get('/', authMiddleware, async (req, res) => {
         }
     } catch (err) {
         console.error(err);
+        return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
+    }
+});
+
+router.get('/:emailId', authMiddleware, async (req, res) => {
+    if (!req.user) return res.status(401).json({ status: 'error', error: 'Unauthorized' });
+
+    const { emailId } = req.params;
+    console.log('EMAIL DEBUG: Fetching emailId:', emailId, 'for userId:', req.user.id);
+
+    try {
+        const result = await db
+            .select({
+                user_email: userEmails,
+                email: emails
+            })
+            .from(userEmails)
+            .innerJoin(emails, eq(userEmails.emailId, emails.id))
+            .where(and(eq(userEmails.emailId, emailId), eq(userEmails.userId, req.user.id)))
+            .limit(1);
+
+        if (!result || result.length === 0) {
+            return res.status(404).json({ status: 'error', error: 'Email not found or access denied' });
+        }
+
+        const { user_email, email } = result[0];
+
+        if (!user_email.isRead) {
+            await db.update(userEmails).set({ isRead: true }).where(eq(userEmails.id, user_email.id));
+        }
+        const emailRecipients = await db.select().from(recipients).where(eq(recipients.emailId, email.id));
+
+        const userEmailWithEmail = {
+            ...user_email,
+            email: {
+                ...email,
+                recipients: emailRecipients
+            }
+        };
+
+        return res.status(200).json({ status: 'success', data: userEmailWithEmail });
+    } catch (err) {
+        console.error('EMAIL DEBUG: Error fetching email:', err);
         return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
     }
 });

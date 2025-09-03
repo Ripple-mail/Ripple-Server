@@ -73,9 +73,9 @@ router.post('/', authMiddleware, async (req, res) => {
 router.put('/:mailboxId', authMiddleware, async (req, res) => {
     if (!req.user) return;
     const { name } = req.body;
-    const mailboxId = parseInt(req.params.mailboxId, 10);
+    const { mailboxId } = req.params;
 
-    if (isNaN(mailboxId)) {
+    if (!mailboxId || typeof mailboxId !== 'string' || mailboxId.trim().length === 0) {
         return res.status(400).json({ status: 'error', error: 'Invalid mailbox ID' });
     }
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -125,9 +125,9 @@ router.put('/:mailboxId', authMiddleware, async (req, res) => {
 // Soft-delete a mailbox
 router.delete('/:mailboxId', authMiddleware, async (req, res) => {
     if (!req.user) return;
-    const mailboxId = parseInt(req.params.mailboxId, 10);
+    const { mailboxId } = req.params;
 
-    if (isNaN(mailboxId)) {
+    if (!mailboxId || typeof mailboxId !== 'string' || mailboxId.trim().length === 0) {
         return res.status(400).json({ status: 'error', error: 'Invalid mailbox ID' });
     }
 

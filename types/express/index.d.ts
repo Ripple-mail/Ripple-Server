@@ -1,7 +1,7 @@
 import "express";
 
 export interface JwtUser {
-    id: number;
+    id: string;
     email: string;
     username: string;
 }

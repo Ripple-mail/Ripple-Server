@@ -11,17 +11,17 @@ const router: Router = express.Router();
 
 const usersTest = [{ id: 1, username: 'Ripple', passwordHash: bcrypt.hashSync('password', 10) }];
 
-router.post('/test', async (req, res) => {
-    const { username, password } = req.body;
-    const user = usersTest.find(u => u.username === username);
-    if (!user) return res.status(400).json({ status: 'error', error: 'User not found' });
+// router.post('/test', async (req, res) => {
+//     const { username, password } = req.body;
+//     const user = usersTest.find(u => u.username === username);
+//     if (!user) return res.status(400).json({ status: 'error', error: 'User not found' });
 
-    const valid = bcrypt.compare(password, user.passwordHash);
-    if (!valid) return res.status(401).json({ status: 'error', error: 'Invalid credentials' });
+//     const valid = bcrypt.compare(password, user.passwordHash);
+//     if (!valid) return res.status(401).json({ status: 'error', error: 'Invalid credentials' });
 
-    const token = signJwt({ id: user.id, username: user.username, email: 'test~ripple.com' });
-    res.json({ token });
-});
+//     const token = signJwt({ id: user.id, username: user.username, email: 'test~ripple.com' });
+//     res.json({ token });
+// });
 
 router.post('/', async (req, res) => {
     const { identifier, password } = req.body;

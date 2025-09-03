@@ -13,7 +13,7 @@ function createBoundary() {
     return `----=_Part_${crypto.randomBytes(16).toString('hex')}`;
 }
 
-async function constructRcptHeader(recipients: { userId?: number; email?: string; type: 'to' | 'cc' | 'bcc' }[], rtype: 'to' | 'cc') {
+async function constructRcptHeader(recipients: { userId?: string; email?: string; type: 'to' | 'cc' | 'bcc' }[], rtype: 'to' | 'cc') {
     const headerArray = await Promise.all(recipients.filter(r => r.type === rtype).map(async r => {
         if (r.email) return r.email;
         if (!r.userId) return null;
@@ -26,10 +26,10 @@ async function constructRcptHeader(recipients: { userId?: number; email?: string
 }
 
 export async function saveEmail(emailData: {
-    sender: { id: number; email: string; }
+    sender: { id: string; email: string; }
     subject?: string;
     bodyText?: string;
-    recipients: { userId?: number; email?: string; type: 'to' | 'cc' | 'bcc' }[];
+    recipients: { userId?: string; email?: string; type: 'to' | 'cc' | 'bcc' }[];
     attachments?: { fileName: string; filePath: string; mimeType: string, sizeBytes?: number }[];
 }) {
     const boundary = createBoundary();
