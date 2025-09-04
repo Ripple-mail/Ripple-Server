@@ -210,11 +210,10 @@ router.patch('/:emailId', authMiddleware, async (req, res) => {
         eq(userEmails.userId, user.id)
     );
     const now = new Date();
-    
 
     try {
         await db.transaction(async (tx) => {
-            const [mailbox] = await db
+            const [mailbox] = await tx
                 .select()
                 .from(mailboxes)
                 .where(
@@ -228,7 +227,7 @@ router.patch('/:emailId', authMiddleware, async (req, res) => {
                 return res.status(404).json({ status: 'error', error: 'Mailbox does not exist for this user' });
             }
 
-            const [result] = await db
+            const [result] = await tx
                 .update(userEmails)
                 .set({ mailboxId, updatedAt: now })
                 .where(emailMatch)
@@ -239,18 +238,18 @@ router.patch('/:emailId', authMiddleware, async (req, res) => {
             }
 
             if (mailbox.mailboxType === 'trash') {
-                await db
+                await tx
                     .update(userEmails)
                     .set({ trashSince: now })
                     .where(emailMatch);
             } else if (result.trashSince !== null) {
-                await db
+                await tx
                     .update(userEmails)
                     .set({ trashSince: null })
                     .where(emailMatch);
             }
 
-            await db.insert(auditLogs).values({
+            await tx.insert(auditLogs).values({
                 userId: user.id,
                 action: 'Email moved successfully',
                 actionType: 'move_email' ,
