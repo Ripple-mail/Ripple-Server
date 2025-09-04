@@ -135,13 +135,15 @@ export const userEmails = pgTable('user_emails', {
     isStarred: boolean('is_starred'),
     isSender: boolean('is_sender').default(false),
     createdAt: timestamp('created_at').defaultNow(),
+    trashSince: timestamp('trash_since'),
     updatedAt: timestamp('updated_at').defaultNow(),
     deletedAt: timestamp('deleted_at')
 }, (table) => [
     index('user_emails_user_idx').on(table.userId),
     index('user_emails_mailbox_idx').on(table.mailboxId),
     index('user_emails_email_idx').on(table.emailId),
-    uniqueIndex('user_emails_unique_idx').on(table.userId, table.emailId, table.mailboxId)
+    uniqueIndex('user_emails_unique_idx').on(table.userId, table.emailId, table.mailboxId),
+    index('user_emails_trash_since').on(table.trashSince)
 ]);
 
 export const recipients = pgTable('recipients', {

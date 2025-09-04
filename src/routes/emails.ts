@@ -3,7 +3,6 @@ import { authMiddleware } from '../middleware/auth';
 import { db } from '../../db/db';
 import { eq, inArray, sql, and, isNull } from 'drizzle-orm';
 import { auditLogs, emails, mailboxes, userEmails, recipients } from '../../db/schema';
-import net from 'node:net';
 import { saveEmail } from '../utils/saveEmail';
 
 const router: Router = express.Router();
@@ -174,12 +173,6 @@ router.post('/send', authMiddleware, async (req, res) => {
     try {
         const email = await saveEmail({ sender, subject, bodyText, recipients });
 
-        const userAgent = req.headers['user-agent'] || ''; // Just so I don't forget, user-agent will be `okhttp/{version}` when sent from Mobile-App.
-        const clientIp = req.ips.length ? req.ips[0] : req.ip;
-        if (clientIp && !net.isIP(clientIp)) {
-            return res.status(400).json({ status: 'error', error: 'Invalid IP address' });
-        }
-
         await db.insert(auditLogs).values({
             userId: req.user.id,
             action: 'Email sent successfully',
@@ -189,9 +182,9 @@ router.post('/send', authMiddleware, async (req, res) => {
                     id: email.id,
                     emlPath: email.emlPath
                 },
-                agent: userAgent
+                agent: req.audit.agent
             }),
-            ipAddress: clientIp,
+            ipAddress: req.audit.ipAddress,
             createdAt: email.createdAt ?? new Date()
         });
 
@@ -202,40 +195,62 @@ router.post('/send', authMiddleware, async (req, res) => {
     }
 });
 
-/* router.delete('/:emailId', authMiddleware, async (req, res) => {
+router.patch('/:emailId', authMiddleware, async (req, res) => {
     if (!req.user) return;
-    const emailId = Number(req.params.emailId.split('?')[0]);
+    const { emailId } = req.params;
+    const { mailboxId } = req.body;
 
-    if (isNaN(emailId)) return res.status(400).json({ status: 'error', error: 'emailId must be a number' });
-
-    const timeNow = new Date();
+    if (!mailboxId) {
+        return res.status(400).json({ status: 'error', error: 'mailboxId is required' });
+    }
 
     try {
-        await db
+        const [mailbox] = await db
+            .select({
+                exists: sql<boolean>`EXISTS(
+                    SELECT 1 FROM ${mailboxes}
+                    WHERE ${and(
+                        eq(mailboxes.id, mailboxId),
+                        eq(mailboxes.userId, req.user.id)
+                    )}
+                )`
+            })
+            .from(mailboxes);
+
+        if (!mailbox.exists) {
+            return res.status(404).json({ status: 'error', error: 'Mailbox does not exist for this user' });
+        }
+
+        const [result] = await db
             .update(userEmails)
-            .set({ deletedAt: timeNow })
+            .set({ mailboxId })
             .where(
                 and(
-                    eq(userEmails.userId, req.user.id),
-                    eq(userEmails.emailId, emailId)
+                    eq(userEmails.emailId, emailId),
+                    eq(userEmails.userId, req.user.id)
                 )
-            );
+            )
+            .returning();
 
-        const userAgent = req.headers['user-agent'] || '';
+        if (!result) {
+            return res.status(404).json({ status: 'error', error: 'Email does not exist for this user' });
+        }
+
         await db.insert(auditLogs).values({
             userId: req.user.id,
-            action: 'Email deleted successfully',
-            actionType: 'delete_email',
+            action: 'Email moved successfully',
+            actionType: 'move_email' ,
             metadata: JSON.stringify({
-                emailId,
-                agent: userAgent
+                agent: req.audit.agent,  
             }),
-            createdAt: timeNow
+            ipAddress: req.audit.ipAddress
         });
+
+        return res.status(200).json({ status: 'success' });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
     }
-}); */
+});
 
 export default router;

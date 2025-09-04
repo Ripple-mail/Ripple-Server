@@ -6,8 +6,14 @@ export interface JwtUser {
     username: string;
 }
 
+export interface AuditOptions {
+    agent: string;
+    ipAddress: string | undefined;
+}
+
 declare module "express-serve-static-core" {
     interface Request {
         user?: JwtUser;
+        audit: AuditOptions;
     }
 }

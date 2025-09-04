@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { xssSanitizer } from './middleware/xss';
 import os from 'node:os';
+import { auditMiddleware } from './middleware/audit';
 dotenv.config();
 
 const PORT = Number(process.env.PORT) || 3001;
@@ -14,7 +15,7 @@ const PORT = Number(process.env.PORT) || 3001;
 const app: Express = express();
 app.use(cors({
     origin: ['http://localhost:5173'],
-    methods: ['GET', 'POST', 'DELETE'],
+    methods: ['GET', 'POST', 'DELETE', 'PATCH'],
     credentials: true
 }));
 app.use(express.json());
@@ -26,6 +27,7 @@ app.set('trust proxy', true);
 //!
 
 app.use(xssSanitizer);
+app.use(auditMiddleware);
 
 //* Load api routes dynamically
 const apiDir = path.join(__dirname, 'routes');
