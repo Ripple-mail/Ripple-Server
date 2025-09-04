@@ -197,6 +197,7 @@ router.post('/send', authMiddleware, async (req, res) => {
 
 router.patch('/:emailId', authMiddleware, async (req, res) => {
     if (!req.user) return;
+    const user = req.user;
     const { emailId } = req.params;
     const { mailboxId } = req.body;
 
@@ -204,49 +205,64 @@ router.patch('/:emailId', authMiddleware, async (req, res) => {
         return res.status(400).json({ status: 'error', error: 'mailboxId is required' });
     }
 
+    const emailMatch = and(
+        eq(userEmails.emailId, emailId),
+        eq(userEmails.userId, user.id)
+    );
+    const now = new Date();
+    
+
     try {
-        const [mailbox] = await db
-            .select({
-                exists: sql<boolean>`EXISTS(
-                    SELECT 1 FROM ${mailboxes}
-                    WHERE ${and(
+        await db.transaction(async (tx) => {
+            const [mailbox] = await db
+                .select()
+                .from(mailboxes)
+                .where(
+                    and(
                         eq(mailboxes.id, mailboxId),
-                        eq(mailboxes.userId, req.user.id)
-                    )}
-                )`
-            })
-            .from(mailboxes);
+                        eq(mailboxes.userId, user.id)
+                    )
+                );
 
-        if (!mailbox.exists) {
-            return res.status(404).json({ status: 'error', error: 'Mailbox does not exist for this user' });
-        }
+            if (!mailbox) {
+                return res.status(404).json({ status: 'error', error: 'Mailbox does not exist for this user' });
+            }
 
-        const [result] = await db
-            .update(userEmails)
-            .set({ mailboxId })
-            .where(
-                and(
-                    eq(userEmails.emailId, emailId),
-                    eq(userEmails.userId, req.user.id)
-                )
-            )
-            .returning();
+            const [result] = await db
+                .update(userEmails)
+                .set({ mailboxId, updatedAt: now })
+                .where(emailMatch)
+                .returning();
 
-        if (!result) {
-            return res.status(404).json({ status: 'error', error: 'Email does not exist for this user' });
-        }
+            if (!result) {
+                return res.status(404).json({ status: 'error', error: 'Email does not exist for this user' });
+            }
 
-        await db.insert(auditLogs).values({
-            userId: req.user.id,
-            action: 'Email moved successfully',
-            actionType: 'move_email' ,
-            metadata: JSON.stringify({
-                agent: req.audit.agent,  
-            }),
-            ipAddress: req.audit.ipAddress
+            if (mailbox.mailboxType === 'trash') {
+                await db
+                    .update(userEmails)
+                    .set({ trashSince: now })
+                    .where(emailMatch);
+            } else if (result.trashSince !== null) {
+                await db
+                    .update(userEmails)
+                    .set({ trashSince: null })
+                    .where(emailMatch);
+            }
+
+            await db.insert(auditLogs).values({
+                userId: user.id,
+                action: 'Email moved successfully',
+                actionType: 'move_email' ,
+                metadata: JSON.stringify({
+                    agent: req.audit.agent,  
+                }),
+                ipAddress: req.audit.ipAddress,
+                createdAt: now
+            });
+
+            return res.status(200).json({ status: 'success' });
         });
-
-        return res.status(200).json({ status: 'success' });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
