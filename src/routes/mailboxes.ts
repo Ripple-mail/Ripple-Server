@@ -32,9 +32,6 @@ router.post('/', authMiddleware, async (req, res) => {
         return res.status(400).json({ status: 'error', error: 'Mailbox name is required and must be a non-empty string' });
     }
 
-    const userAgent = req.headers['user-agent'] || '';
-    const clientIp = req.ips.length ? req.ips[0] : req.ip;
-
     try {
         const existingMailbox = await db.query.mailboxes.findFirst({
             where: and(
@@ -58,8 +55,11 @@ router.post('/', authMiddleware, async (req, res) => {
             userId: req.user.id,
             action: `Created mailbox: ${name.trim()}`,
             actionType: 'create_mailbox',
-            ipAddress: clientIp,
-            metadata: JSON.stringify({ agent: userAgent, mailboxId: newMailbox.id })
+            ipAddress: req.audit.ipAddress,
+            metadata: JSON.stringify({
+                agent: req.audit.agent,
+                mailboxId: newMailbox.id
+            })
         });
 
         res.status(201).json({ status: 'success', data: newMailbox });
@@ -81,9 +81,6 @@ router.put('/:mailboxId', authMiddleware, async (req, res) => {
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
         return res.status(400).json({ status: 'error', error: 'New mailbox name is required' });
     }
-
-    const userAgent = req.headers['user-agent'] || '';
-    const clientIp = req.ips.length ? req.ips[0] : req.ip;
 
     try {
         const mailbox = await db.query.mailboxes.findFirst({
@@ -111,8 +108,11 @@ router.put('/:mailboxId', authMiddleware, async (req, res) => {
             userId: req.user.id,
             action: `Renamed mailbox from "${oldName}" to "${name.trim()}"`,
             actionType: 'rename_mailbox',
-            ipAddress: clientIp,
-            metadata: JSON.stringify({ agent: userAgent, mailboxId: updatedMailbox.id })
+            ipAddress: req.audit.ipAddress,
+            metadata: JSON.stringify({
+                agent: req.audit.agent,
+                mailboxId: updatedMailbox.id
+            })
         });
 
         res.status(200).json({ status: 'success', data: updatedMailbox });
@@ -130,9 +130,6 @@ router.delete('/:mailboxId', authMiddleware, async (req, res) => {
     if (!mailboxId || typeof mailboxId !== 'string' || mailboxId.trim().length === 0) {
         return res.status(400).json({ status: 'error', error: 'Invalid mailbox ID' });
     }
-
-    const userAgent = req.headers['user-agent'] || '';
-    const clientIp = req.ips.length ? req.ips[0] : req.ip;
 
     try {
         const mailbox = await db.query.mailboxes.findFirst({
@@ -160,8 +157,11 @@ router.delete('/:mailboxId', authMiddleware, async (req, res) => {
             userId: req.user.id,
             action: `Deleted mailbox: ${mailbox.name}`,
             actionType: 'delete_mailbox',
-            ipAddress: clientIp,
-            metadata: JSON.stringify({ agent: userAgent, mailboxId: mailbox.id })
+            ipAddress: req.audit.ipAddress,
+            metadata: JSON.stringify({
+                agent: req.audit.agent,
+                mailboxId: mailbox.id
+            })
         });
 
         res.status(200).json({ status: 'success', message: 'Mailbox deleted successfully' });

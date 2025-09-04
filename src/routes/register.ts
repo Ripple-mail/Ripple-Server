@@ -40,12 +40,6 @@ router.post('/', async (req, res) => {
             passwordHash
         }).returning({ id: users.id });
 
-        const userAgent = req.headers['user-agent'] || '';
-        const clientIp = req.ips.length ? req.ips[0] : req.ip;
-        if (clientIp && !net.isIP(clientIp)) {
-            return res.status(400).json({ status: 'error', error: 'Invalid IP address' });
-        }
-
         const mailboxTypes = ['Inbox', 'Sent', 'Draft', 'Trash'];
         const mailboxesToCreate = mailboxTypes.map(name => ({
             userId: user.id,
@@ -61,9 +55,9 @@ router.post('/', async (req, res) => {
             action: 'User registerd succesfully',
             actionType: 'register',
             metadata: JSON.stringify({
-                agent: userAgent,
+                agent: req.audit.agent,
             }),
-            ipAddress: clientIp
+            ipAddress: req.audit.ipAddress
         });
 
         return res.status(201).json({ status: 'success', message: 'User registered succesfully' });

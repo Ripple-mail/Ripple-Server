@@ -5,7 +5,6 @@ import { auditLogs, users, userSettings } from '../../db/schema';
 import { db } from '../../db/db';
 import { eq, or } from 'drizzle-orm';
 import argon2 from 'argon2';
-import net from 'node:net';
 
 const router: Router = express.Router();
 
@@ -28,12 +27,6 @@ router.post('/', async (req, res) => {
 
     if (!identifier || !password) {
         return res.status(400).json({ status: 'error', error: 'Email/username and password required' });
-    }
-
-    const userAgent = req.headers['user-agent'] || '';
-    const clientIp = req.ips.length ? req.ips[0] : req.ip;
-    if (clientIp && !net.isIP(clientIp)) {
-        return res.status(400).json({ status: 'error', error: 'Invalid IP address' });
     }
 
     try {
@@ -60,9 +53,9 @@ router.post('/', async (req, res) => {
                 actionType: 'failed_login_attempt',
                 metadata: JSON.stringify({
                     method: 'password',
-                    agent: userAgent
+                    agent: req.audit.agent
                 }),
-                ipAddress: clientIp
+                ipAddress: req.audit.ipAddress
             });
             return res.status(401).json({ status: 'error', error: 'Invalid credentials' });
         }
@@ -81,12 +74,12 @@ router.post('/', async (req, res) => {
             actionType: 'login',
             metadata: JSON.stringify({
                 method: 'password',
-                agent: userAgent
+                agent: req.audit.agent
             }),
-            ipAddress: clientIp
+            ipAddress: req.audit.ipAddress
         });
 
-        const isWebBrowser = /Mozilla|Chrome|Safari|Edge/.test(userAgent);
+        const isWebBrowser = /Mozilla|Chrome|Safari|Edge/.test(req.audit.agent);
 
         if (isWebBrowser) {
             res.cookie('jwt', token, {

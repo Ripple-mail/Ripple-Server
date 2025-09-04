@@ -9,24 +9,18 @@ const router: Router = express.Router();
 router.post('/', authMiddleware, async (req, res) => {
     if (!req.user) return;
 
-    const userAgent = req.headers['user-agent'] || '';
-    const clientIp = req.ips.length ? req.ips[0] : req.ip;
-    if (clientIp && !net.isIP(clientIp)) {
-        return res.status(400).json({ status: 'error', error: 'Invalid IP address' });
-    }
-
     try {
         await db.insert(auditLogs).values({
             userId: req.user.id,
             action: 'User logged out successfully',
             actionType: 'logout',
             metadata: JSON.stringify({
-                agent: userAgent
+                agent: req.audit.agent
             }),
-            ipAddress: clientIp
+            ipAddress: req.audit.ipAddress
         });
 
-        const isWebBrowser = /Mozilla|Chrome|Safari|Edge/.test(userAgent);
+        const isWebBrowser = /Mozilla|Chrome|Safari|Edge/.test(req.audit.agent);
 
         if (isWebBrowser) {
             res.cookie('jwt', '', {
