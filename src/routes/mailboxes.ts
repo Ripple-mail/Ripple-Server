@@ -171,5 +171,4 @@ router.delete('/:mailboxId', authMiddleware, async (req, res) => {
     }
 });
 
-
 export default router;
