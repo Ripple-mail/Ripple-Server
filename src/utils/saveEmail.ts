@@ -32,45 +32,48 @@ export async function saveEmail(emailData: {
     recipients: { userId?: string; email?: string; type: 'to' | 'cc' | 'bcc' }[];
     attachments?: { fileName: string; filePath: string; mimeType: string, sizeBytes?: number }[];
 }) {
-    const boundary = createBoundary();
-    const toHeader = await constructRcptHeader(emailData.recipients, 'to');
-    const ccHeader = await constructRcptHeader(emailData.recipients, 'cc');
-
+    const now = new Date()
     const messageId = generateMessageId();
-
     let headers = '';
-    headers += `From: ${emailData.sender.email}\r\n`;
-    headers += `To: ${toHeader}\r\n`;
-    if (ccHeader) headers += `Cc: ${ccHeader}\r\n`;
-    headers += `Subject: ${emailData.subject || ''}\r\n`;
-    headers += `Message-ID: ${messageId}\r\n`;
-    headers += `Date: ${new Date().toUTCString()}\r\n`;
-    headers += `MIME-Version: 1.0\r\n`;
-
-    const hasAttachments = emailData.attachments && emailData.attachments.length > 0;
-    if (hasAttachments) {
-        headers += `Content-Type: multipart/mixed; boundary="${boundary}"\r\n\r\n`;
-    } else {
-        headers += `Content-Type: text/plain; charset="utf-8"\r\n\r\n`;
-    }
-
     let body = '';
-    if (hasAttachments) {
-        body += `--${boundary}\r\n`;
-        body += `Content-Type: text/plain; charset="utf-8"\r\n\r\n`;
-        body += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
-        body += `${emailData.bodyText || ''}\r\n\r\n`;
 
-        for (const att of emailData.attachments!) {
-            body += `--${boundary}`;
-            body += `Content-Type: ${att.mimeType}; name="${att.fileName}"\r\n`;
-            body += `Content-Disposition: attachment; filename="${att.fileName}"\r\n\r\n`;
-            body += `X-Local-File-Path: ${att.filePath}\r\n\r\n`;
+    if (process.env.USE_EMLS === 'true') {
+        const boundary = createBoundary();
+        const toHeader = await constructRcptHeader(emailData.recipients, 'to');
+        const ccHeader = await constructRcptHeader(emailData.recipients, 'cc');
+
+        headers += `From: ${emailData.sender.email}\r\n`;
+        headers += `To: ${toHeader}\r\n`;
+        if (ccHeader) headers += `Cc: ${ccHeader}\r\n`;
+        headers += `Subject: ${emailData.subject || ''}\r\n`;
+        headers += `Message-ID: ${messageId}\r\n`;
+        headers += `Date: ${new Date().toUTCString()}\r\n`;
+        headers += `MIME-Version: 1.0\r\n`;
+
+        const hasAttachments = emailData.attachments && emailData.attachments.length > 0;
+        if (hasAttachments) {
+            headers += `Content-Type: multipart/mixed; boundary="${boundary}"\r\n\r\n`;
+        } else {
+            headers += `Content-Type: text/plain; charset="utf-8"\r\n\r\n`;
         }
 
-        body += `--${boundary}--\r\n`;
-    } else {
-        body += emailData.bodyText || '';
+        if (hasAttachments) {
+            body += `--${boundary}\r\n`;
+            body += `Content-Type: text/plain; charset="utf-8"\r\n\r\n`;
+            body += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
+            body += `${emailData.bodyText || ''}\r\n\r\n`;
+
+            for (const att of emailData.attachments!) {
+                body += `--${boundary}`;
+                body += `Content-Type: ${att.mimeType}; name="${att.fileName}"\r\n`;
+                body += `Content-Disposition: attachment; filename="${att.fileName}"\r\n\r\n`;
+                body += `X-Local-File-Path: ${att.filePath}\r\n\r\n`;
+            }
+
+            body += `--${boundary}--\r\n`;
+        } else {
+            body += emailData.bodyText || '';
+        }
     }
 
     const emlContent = headers + body;
@@ -81,20 +84,23 @@ export async function saveEmail(emailData: {
             fromAddress: String(emailData.sender.email),
             messageId,
             subject: emailData.subject || '',
-            date: new Date(),
+            date: now,
             emlPath: '',
             sizeBytes: Buffer.byteLength(emlContent, 'utf-8'),
             bodyText: emailData.bodyText || ''
         }).returning();
 
-        const messagesFolder = path.join(__dirname, '..', '..', 'storage', 'messages');
-        if (!fs.existsSync(messagesFolder)) fs.mkdirSync(messagesFolder, { recursive: true });
-        const emlPath = path.join(messagesFolder, `${insertedEmail.id}.eml`);
+        let emlPath = '';
 
         try {
-            fs.writeFileSync(emlPath, emlContent);
+            if (process.env.USE_EMLS === 'true') {
+                const messagesFolder = path.join(__dirname, '..', '..', 'storage', 'messages', emailData.sender.id);
+                if (!fs.existsSync(messagesFolder)) fs.mkdirSync(messagesFolder, { recursive: true });
+                emlPath = path.join(messagesFolder, `${insertedEmail.id}.eml`);
+                fs.writeFileSync(emlPath, emlContent);
 
-            await tx.update(emails).set({ emlPath }).where(eq(emails.id, insertedEmail.id));
+                await tx.update(emails).set({ emlPath }).where(eq(emails.id, insertedEmail.id));
+            }
 
             const [sent] = await tx
                 .select()
@@ -112,7 +118,8 @@ export async function saveEmail(emailData: {
                 userId: emailData.sender.id,
                 emailId: insertedEmail.id,
                 mailboxId: sent.id,
-                isSender: true
+                isSender: true,
+                createdAt: now
             });
 
             for (const recipient of emailData.recipients) {
@@ -145,7 +152,8 @@ export async function saveEmail(emailData: {
                 await tx.insert(userEmails).values({
                     userId: recipientUser.id,
                     emailId: insertedEmail.id,
-                    mailboxId: inbox.id
+                    mailboxId: inbox.id,
+                    createdAt: now
                 });
             }
 
@@ -156,7 +164,8 @@ export async function saveEmail(emailData: {
                         fileName: att.fileName,
                         mimeType: att.mimeType,
                         sizeBytes: att.sizeBytes || fs.statSync(att.filePath).size,
-                        filePath: att.filePath
+                        filePath: att.filePath,
+                        createdAt: now
                     });
                 }
             }
