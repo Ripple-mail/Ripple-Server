@@ -188,7 +188,7 @@ router.delete('/', authMiddleware, async (req, res) => {
                 and(
                     eq(mailboxes.userId, req.user.id),
                     eq(mailboxes.mailboxType, 'trash'),
-                    eq(mailboxes.systemMailbox, true) // Currently only use system mailbox. Maybe custom in 4 years?
+                    eq(mailboxes.systemMailbox, true) //? Currently only use system mailbox. Maybe custom in 4 years?
                 )
             )
             .limit(1);
@@ -393,7 +393,7 @@ router.delete('/:emailId', authMiddleware, async (req, res) => {
                 and(
                     eq(mailboxes.userId, req.user.id),
                     eq(mailboxes.mailboxType, 'trash'),
-                    eq(mailboxes.systemMailbox, true) // Currently only use system mailbox. Maybe custom in 4 years?
+                    eq(mailboxes.systemMailbox, true) //? Currently only use system mailbox. Maybe custom in 4 years?
                 )
             )
             .limit(1);

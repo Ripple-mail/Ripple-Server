@@ -50,7 +50,7 @@ router.post('/', authMiddleware, async (req, res) => {
             systemMailbox: false,
             mailboxType: null,
         }).returning();
-        
+
         await db.insert(auditLogs).values({
             userId: req.user.id,
             action: `Created mailbox: ${name.trim()}`,

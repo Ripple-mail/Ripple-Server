@@ -3,7 +3,6 @@ import argon2 from 'argon2';
 import { db } from '../../db/db';
 import { eq, or } from 'drizzle-orm';
 import { users, mailboxes, auditLogs } from '../../db/schema';
-import net from 'node:net';
 
 const router: Router = express.Router();
 
