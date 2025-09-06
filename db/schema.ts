@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { sql, SQL } from 'drizzle-orm';
 import {
     pgTable,
     pgEnum,
