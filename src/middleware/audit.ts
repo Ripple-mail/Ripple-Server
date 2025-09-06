@@ -5,4 +5,5 @@ export function auditMiddleware(req: Request, res: Response, next: NextFunction)
     const ipAddress = req.ips.length ? req.ips[0] : req.ip;
 
     req.audit = { agent, ipAddress }
+    next();
 }

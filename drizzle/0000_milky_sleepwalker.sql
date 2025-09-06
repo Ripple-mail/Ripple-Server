@@ -1,11 +1,12 @@
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";--> statement-breakpoint
 CREATE TYPE "public"."action_types" AS ENUM('register', 'login', 'failed_login_attempt', 'logout', 'password_reset_request', 'password_reset_complete', 'two_factor_enabled', 'two_factor_disabled', 'send_email', 'move_email', 'delete_email', 'restore_email', 'forward_email', 'create_mailbox', 'rename_mailbox', 'delete_mailbox', 'create_label', 'rename_label', 'delete_label', 'apply_label', 'remove_label');--> statement-breakpoint
 CREATE TYPE "public"."mailbox_types" AS ENUM('inbox', 'sent', 'draft', 'trash');--> statement-breakpoint
 CREATE TYPE "public"."mfa_method" AS ENUM('otp', 'webauthn', 'both');--> statement-breakpoint
 CREATE TYPE "public"."rcpt_types" AS ENUM('to', 'cc', 'bcc');--> statement-breakpoint
 CREATE TYPE "public"."theme" AS ENUM('light', 'dark', 'system');--> statement-breakpoint
 CREATE TABLE "attachments" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"email_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"email_id" uuid NOT NULL,
 	"file_name" text NOT NULL,
 	"file_path" text NOT NULL,
 	"mime_type" text NOT NULL,
@@ -15,8 +16,8 @@ CREATE TABLE "attachments" (
 );
 --> statement-breakpoint
 CREATE TABLE "audit_logs" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid,
 	"action" text NOT NULL,
 	"action_type" "action_types" NOT NULL,
 	"ip_address" text,
@@ -25,14 +26,14 @@ CREATE TABLE "audit_logs" (
 );
 --> statement-breakpoint
 CREATE TABLE "email_labels" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_email_id" integer NOT NULL,
-	"label_id" integer NOT NULL
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_email_id" uuid NOT NULL,
+	"label_id" uuid NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "emails" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"sender_id" integer,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"sender_id" uuid,
 	"from_address" text,
 	"message_id" text,
 	"subject" text,
@@ -48,16 +49,16 @@ CREATE TABLE "emails" (
 );
 --> statement-breakpoint
 CREATE TABLE "labels" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"color" text,
 	"created_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE "mailboxes" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
 	"name" text NOT NULL,
 	"mailbox_type" "mailbox_types" DEFAULT 'inbox',
 	"system_mailbox" boolean DEFAULT false,
@@ -67,18 +68,18 @@ CREATE TABLE "mailboxes" (
 );
 --> statement-breakpoint
 CREATE TABLE "recipients" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"email_id" integer NOT NULL,
-	"user_id" integer,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"email_id" uuid NOT NULL,
+	"user_id" uuid,
 	"address" text,
 	"type" "rcpt_types" NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "user_emails" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"user_id" integer NOT NULL,
-	"email_id" integer NOT NULL,
-	"mailbox_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"email_id" uuid NOT NULL,
+	"mailbox_id" uuid NOT NULL,
 	"is_read" boolean DEFAULT false,
 	"is_starred" boolean,
 	"created_at" timestamp DEFAULT now(),
@@ -87,7 +88,7 @@ CREATE TABLE "user_emails" (
 );
 --> statement-breakpoint
 CREATE TABLE "user_settings" (
-	"user_id" integer PRIMARY KEY NOT NULL,
+	"user_id" uuid PRIMARY KEY NOT NULL,
 	"theme" "theme" DEFAULT 'light' NOT NULL,
 	"language" text DEFAULT 'en' NOT NULL,
 	"mfa_enabled" boolean DEFAULT false NOT NULL,
@@ -95,7 +96,7 @@ CREATE TABLE "user_settings" (
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" serial PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"username" text NOT NULL,
 	"email" text NOT NULL,
 	"password_hash" text NOT NULL,
