@@ -1,4 +1,4 @@
-import { sql, SQL } from 'drizzle-orm';
+import { sql, relations } from 'drizzle-orm';
 import {
     pgTable,
     pgEnum,
@@ -9,7 +9,13 @@ import {
     boolean,
     index,
     uniqueIndex,
-    customType
+    customType,
+    varchar,
+    inet,
+    check,
+    foreignKey,
+    bigint,
+    jsonb
 } from 'drizzle-orm/pg-core';
 
 export const themeOptions = pgEnum('theme', ['light', 'dark', 'system']);
@@ -156,7 +162,7 @@ export const recipients = pgTable('recipients', {
     index('recipient_email_idx').on(table.emailId),
     index('recipient_rcpt_idx').on(table.userId),
     index('recipient_email_type_idx').on(table.emailId, table.type),
-    sql`ALTER TABLE "recipients" ADD CONSTRAINT recipients_target_chk CHECK (user_id IS NOT NULL OR address IS NOT NULL);`
+    check('recipients_target_chk', sql`user_id IS NOT NULL OR address IS NOT NULL`)
 ]);
 
 export const attachments = pgTable('attachments', {
@@ -198,6 +204,111 @@ export const auditLogs = pgTable('audit_logs', {
     action: text('action').notNull(),
     actionType: actionTypes('action_type').notNull(),
     ipAddress: text('ip_address'),
-    metadata: text('metadata'),
+    metadata: jsonb('metadata'),
     createdAt: timestamp('created_at').defaultNow()
 });
+
+
+
+// RELATIONS //
+//#region RELATIONS
+
+export const userRelations = relations(users, ({ many, one }) => ({
+    settings: one(userSettings, {
+        fields: [users.id],
+        references: [userSettings.userId]
+    }),
+    mailboxes: many(mailboxes),
+    userEmails: many(userEmails),
+    sentEmails: many(emails),
+    recipients: many(recipients),
+    auditLogs: many(auditLogs),
+    labels: many(labels)
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+    user: one(users, {
+        fields: [userSettings.userId],
+        references: [users.id]
+    })
+}));
+
+export const mailboxRelations = relations(mailboxes, ({ many, one }) => ({
+    user: one(users, {
+        fields: [mailboxes.userId],
+        references: [users.id]
+    }),
+    userEmails: many(userEmails)
+}));
+
+export const emailRelations = relations(emails, ({ many, one }) => ({
+    sender: one(users, {
+        fields: [emails.senderId],
+        references: [users.id]
+    }),
+    userEmails: many(userEmails),
+    recipients: many(recipients),
+    attachments: many(attachments)
+}));
+
+export const userEmailRelations = relations(userEmails, ({ many, one }) => ({
+    user: one(users, {
+        fields: [userEmails.userId],
+        references: [users.id]
+    }),
+    email: one(emails, {
+        fields: [userEmails.emailId],
+        references: [emails.id]
+    }),
+    mailbox: one(mailboxes, {
+        fields: [userEmails.mailboxId],
+        references: [mailboxes.id]
+    }),
+    labels: many(emailLabels)
+}));
+
+export const recipientRelations = relations(recipients, ({ one }) => ({
+    email: one(emails, {
+        fields: [recipients.emailId],
+        references: [emails.id]
+    }),
+    user: one(users, {
+        fields: [recipients.userId],
+        references: [users.id]
+    })
+}));
+
+export const attachmentRelations = relations(attachments, ({ one }) => ({
+    email: one(emails, {
+        fields: [attachments.emailId],
+        references: [emails.id]
+    })
+}));
+
+export const labelRelations = relations(labels, ({ many, one }) => ({
+    user: one(users, {
+        fields: [labels.userId],
+        references: [users.id]
+    }),
+    emailLabels: many(emailLabels)
+}));
+
+export const emailLabelRelations = relations(emailLabels, ({ one }) => ({
+    userEmail: one(userEmails, {
+        fields: [emailLabels.userEmailId],
+        references: [userEmails.id]
+    }),
+    label: one(labels, {
+        fields: [emailLabels.labelId],
+        references: [labels.id]
+    })
+}));
+
+export const auditLogRelations = relations(auditLogs, ({ one }) => ({
+    user: one(users, {
+        fields: [auditLogs.userId],
+        references: [users.id]
+    })
+}));
+
+//#endregion

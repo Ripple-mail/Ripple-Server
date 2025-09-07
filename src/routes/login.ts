@@ -1,5 +1,4 @@
 import express, { Router } from 'express';
-import bcrypt from 'bcrypt';
 import { signJwt } from '../utils/jwt';
 import { auditLogs, users, userSettings } from '../../db/schema';
 import { db } from '../../db/db';

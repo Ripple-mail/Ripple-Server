@@ -2,7 +2,7 @@ import express, { Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { db } from '../../db/db';
 import { eq, inArray, sql, and, isNull, isNotNull } from 'drizzle-orm';
-import { auditLogs, emails, mailboxes, userEmails, recipients } from '../../db/schema';
+import { auditLogs, emails, mailboxes, userEmails } from '../../db/schema';
 import { saveEmail } from '../utils/saveEmail';
 
 const router: Router = express.Router();
@@ -92,28 +92,21 @@ router.get('/', authMiddleware, async (req, res) => {
 
             return res.status(200).json({ status: 'success', data: results });
         } else {
-            const userMailboxEmails = await db
-                .select({
-                    user_emails: userEmails,
-                    emails: emails,
-                    recipients: sql<string[]>`
-                        ARRAY(
-                            SELECT r.address
-                            FROM recipients r
-                            WHERE r.email_id = emails.id AND r.type IN ('to', 'cc')
-                        )
-                    `.as('recipients')
-                })
-                .from(userEmails)
-                .innerJoin(emails, eq(userEmails.emailId, emails.id))
-                .where(
-                    and(
-                        eq(userEmails.userId, req.user.id),
-                        inArray(userEmails.mailboxId, mailboxIds),
-                        isNull(userEmails.deletedAt)
-                    )
-                )
-                .orderBy(emails.createdAt);
+            const userMailboxEmails = await db.query.userEmails.findMany({
+                where: and(
+                    eq(userEmails.userId, req.user.id),
+                    inArray(userEmails.mailboxId, mailboxIds),
+                    isNull(userEmails.deletedAt)
+                ),
+                with: {
+                    email: {
+                        with: {
+                            recipients: true
+                        }
+                    }
+                },
+                orderBy: (emails, { asc }) => [asc(emails.createdAt)]
+            });
 
             return res.status(200).json({ status: 'success', data: userMailboxEmails });
         }
@@ -180,18 +173,14 @@ router.delete('/', authMiddleware, async (req, res) => {
         return res.status(400).json({ status: 'error', error: 'ids is required and must be a non-empty-array' });
     }
 
-    try {
-        const [trashMailbox] = await db
-            .select()
-            .from(mailboxes)
-            .where(
-                and(
-                    eq(mailboxes.userId, req.user.id),
-                    eq(mailboxes.mailboxType, 'trash'),
-                    eq(mailboxes.systemMailbox, true) //? Currently only use system mailbox. Maybe custom in 4 years?
-                )
+    try {        
+        const trashMailbox = await db.query.mailboxes.findFirst({
+            where: and(
+                eq(mailboxes.userId, req.user.id),
+                eq(mailboxes.mailboxType, 'trash'),
+                eq(mailboxes.systemMailbox, true) //? Currently only use system mailbox. Maybe custom in 4 years?
             )
-            .limit(1);
+        });
         
         if (!trashMailbox) {
             return res.status(404).json({ status: 'error', error: 'Trash mailbox not found for user. Please contact support if this continues.' });
@@ -240,37 +229,30 @@ router.get('/:emailId', authMiddleware, async (req, res) => {
     const { emailId } = req.params;
     console.log('EMAIL DEBUG: Fetching emailId:', emailId, 'for userId:', req.user.id);
 
-    try {
-        const result = await db
-            .select({
-                user_email: userEmails,
-                email: emails
-            })
-            .from(userEmails)
-            .innerJoin(emails, eq(userEmails.emailId, emails.id))
-            .where(and(eq(userEmails.emailId, emailId), eq(userEmails.userId, req.user.id)))
-            .limit(1);
+    try {        
+        const userEmail = await db.query.userEmails.findFirst({
+            where: and(
+                eq(userEmails.emailId, emailId),
+                eq(userEmails.userId, req.user.id)
+            ),
+            with: {
+                email: {
+                    with: {
+                        recipients: true
+                    }
+                }
+            }
+        });
 
-        if (!result || result.length === 0) {
+        if (!userEmail) {
             return res.status(404).json({ status: 'error', error: 'Email not found or access denied' });
         }
 
-        const { user_email, email } = result[0];
-
-        if (!user_email.isRead) {
-            await db.update(userEmails).set({ isRead: true }).where(eq(userEmails.id, user_email.id));
+        if (!userEmail.isRead) {
+            await db.update(userEmails).set({ isRead: true }).where(eq(userEmails.id, userEmail.id));
         }
-        const emailRecipients = await db.select().from(recipients).where(eq(recipients.emailId, email.id));
 
-        const userEmailWithEmail = {
-            ...user_email,
-            email: {
-                ...email,
-                recipients: emailRecipients
-            }
-        };
-
-        return res.status(200).json({ status: 'success', data: userEmailWithEmail });
+        return res.status(200).json({ status: 'success', data: userEmail });
     } catch (err) {
         console.error('EMAIL DEBUG: Error fetching email:', err);
         return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
@@ -325,15 +307,12 @@ router.patch('/:emailId', authMiddleware, async (req, res) => {
 
     try {
         await db.transaction(async (tx) => {
-            const [mailbox] = await tx
-                .select()
-                .from(mailboxes)
-                .where(
-                    and(
-                        eq(mailboxes.id, mailboxId),
-                        eq(mailboxes.userId, user.id)
-                    )
-                );
+            const mailbox = await tx.query.mailboxes.findFirst({
+                where: and(
+                    eq(mailboxes.id, mailboxId),
+                    eq(mailboxes.userId, user.id)
+                )
+            });
 
             if (!mailbox) {
                 return res.status(404).json({ status: 'error', error: 'Mailbox does not exist for this user' });
@@ -386,17 +365,13 @@ router.delete('/:emailId', authMiddleware, async (req, res) => {
     const { emailId } = req.params;
 
     try {
-        const [trashMailbox] = await db
-            .select()
-            .from(mailboxes)
-            .where(
-                and(
-                    eq(mailboxes.userId, req.user.id),
-                    eq(mailboxes.mailboxType, 'trash'),
-                    eq(mailboxes.systemMailbox, true) //? Currently only use system mailbox. Maybe custom in 4 years?
-                )
+        const trashMailbox = await db.query.mailboxes.findFirst({
+            where: and(
+                eq(mailboxes.userId, req.user.id),
+                eq(mailboxes.mailboxType, 'trash'),
+                eq(mailboxes.systemMailbox, true) //? Currently only use system mailbox. Maybe custom in 4 years?
             )
-            .limit(1);
+        });
         
         if (!trashMailbox) {
             return res.status(404).json({ status: 'error', error: 'Trash mailbox not found for user. Please contact support if this continues.' });

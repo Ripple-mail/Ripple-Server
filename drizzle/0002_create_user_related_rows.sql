@@ -3,12 +3,12 @@ RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO user_settings (user_id)
   VALUES (NEW.id);
-  INSERT INTO mailboxes (user_id, name, mailbox_type, system_mailbox)
+  INSERT INTO mailboxes (user_id, name, mailbox_type, system_mailbox, created_at)
   VALUES
-    (NEW.id, 'Inbox', 'inbox', true),
-    (NEW.id, 'Sent', 'sent', true),
-    (NEW.id, 'Drafts', 'draft', true),
-    (NEW.id, 'Trash', 'trash', true);
+    (NEW.id, 'Inbox', 'inbox', true, NEW.created_at),
+    (NEW.id, 'Sent', 'sent', true, NEW.created_at),
+    (NEW.id, 'Drafts', 'draft', true, NEW.created_at),
+    (NEW.id, 'Trash', 'trash', true, NEW.created_at);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
