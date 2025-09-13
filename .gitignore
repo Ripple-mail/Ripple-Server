@@ -135,13 +135,12 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# Lock files
-package-lock.json
+# Drizzle cache
+.drizzle-kit/
 
 # Email folder
 mailDir/
 
 # User files dir/
 src/server/api/files/
-
-drizzle/
+/storage

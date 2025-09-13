@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1755883208496,
+      "tag": "0000_milky_sleepwalker",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1755883222805,
+      "tag": "0001_add_email_search_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755883243492,
+      "tag": "0002_create_user_related_rows",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1756320421486,
+      "tag": "0003_striped_wrecking_crew",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1756926788441,
+      "tag": "0004_change_serial_to_uuid",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1756946957385,
+      "tag": "0005_abnormal_random",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1756946996224,
+      "tag": "0006_auto_del_trashed_emls",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,6 +1,0 @@
-{
-	"host": "ripple.heggo.dev",
-    "smtp": {
-        "port": 25
-    }
-}
