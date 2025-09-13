@@ -1,19 +1,15 @@
-import "express";
-
-export interface JwtUser {
-    id: string;
-    email: string;
-    username: string;
-}
+import 'express';
+import { sessions, users } from '../../db/schema';
 
 export interface AuditOptions {
     agent: string;
     ipAddress: string | undefined;
 }
 
-declare module "express-serve-static-core" {
+declare module 'express-serve-static-core' {
     interface Request {
-        user?: JwtUser;
+        user: typeof users.$inferSelect;
         audit: AuditOptions;
+        session: typeof sessions.$inferSelect;
     }
 }

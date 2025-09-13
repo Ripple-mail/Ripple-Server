@@ -10,24 +10,73 @@ import cookieParser from 'cookie-parser';
 import { xssSanitizer } from './middleware/xss';
 import os from 'node:os';
 import { auditMiddleware } from './middleware/audit';
+import rateLimit from 'express-rate-limit';
+import csrf from 'csurf';
 dotenv.config();
 
 const PORT = Number(process.env.PORT) || 3001;
 
 const app: Express = express();
+
+app.locals.appName = 'Ripple Mail';
+
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: [
+        'http://localhost:5173',
+        'https://api.ripplemail.de'
+    ],
     methods: ['GET', 'POST', 'DELETE', 'PATCH'],
     credentials: true
 }));
-app.use(express.json());
-app.use(helmet());
+app.use(express.json({
+    limit: '1mb'
+}));
+app.use(express.urlencoded({
+    extended: true,
+    limit: '1mb'
+}));
+app.use('/files', express.static('storage', { // For serving static files
+    maxAge: '1y',
+    immutable: true,
+    setHeaders: (res) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+    }
+}));
+app.disable('x-powered-by');
+if (process.env.NODE_ENV === 'production') {
+    if (process.env.TRUST_PROXY === 'true') {
+        app.set('trust proxy', true);
+    }
+}
+
+app.use(helmet({
+    contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: []
+        },
+    },
+    referrerPolicy: {
+        policy: 'strict-origin-when-cross-origin'
+    },
+    hsts: process.env.NODE_ENV === 'production' ? {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+    } : false
+}));
 app.use(cookieParser());
-
-//! IF YOU'RE NOT BEHIND A PROXY (LIKE CLOUDFLARE OR NGINX) REMOVE THIS LINE
-app.set('trust proxy', true);
-//!
-
+// app.use(csrf({ cookie: true })); // Enable when using session-based
+app.use('/api', rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false
+}));
 app.use(xssSanitizer);
 app.use(auditMiddleware);
 
@@ -41,7 +90,7 @@ function loadRoutes(dir: string) {
 
         if (entry.isDirectory()) {
             loadRoutes(fullPath);
-        } else if (entry.isFile() && entry.name.endsWith('.ts')) {
+        } else if (entry.isFile() && entry.name.endsWith('.ts') && !entry.name.startsWith('_')) {
             const relativePath = path.relative(apiDir, fullPath);
             const routePath = relativePath.replace(/\.ts/, '').replace(/\\/g, '/');
 

@@ -6,8 +6,6 @@ import { authMiddleware } from '../middleware/auth';
 const router: Router = express.Router();
 
 router.post('/', authMiddleware, async (req, res) => {
-    if (!req.user) return;
-
     try {
         await db.insert(auditLogs).values({
             userId: req.user.id,

@@ -5,5 +5,6 @@ declare namespace NodeJS {
         NODE_ENV?: 'production' | 'development';
         JWT_SECRET?: string;
         USE_EMLS?: 'true' | 'false';
+        TRUST_PROXY?: 'true' | 'false';
     }
 }

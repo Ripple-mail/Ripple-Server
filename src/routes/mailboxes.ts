@@ -7,8 +7,6 @@ import { eq, and, isNull } from 'drizzle-orm';
 const router: Router = express.Router();
 
 router.get('/', authMiddleware, async (req, res) => {
-    if (!req.user) return;
-
     try {
         const userMailboxes = await db.query.mailboxes.findMany({
             where: and(
@@ -25,7 +23,6 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 router.post('/', authMiddleware, async (req, res) => {
-    if (!req.user) return;
     const { name } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -71,7 +68,6 @@ router.post('/', authMiddleware, async (req, res) => {
 
 // Update a mailbox name
 router.put('/:mailboxId', authMiddleware, async (req, res) => {
-    if (!req.user) return;
     const { name } = req.body;
     const { mailboxId } = req.params;
 
@@ -124,7 +120,6 @@ router.put('/:mailboxId', authMiddleware, async (req, res) => {
 
 // Soft-delete a mailbox
 router.delete('/:mailboxId', authMiddleware, async (req, res) => {
-    if (!req.user) return;
     const { mailboxId } = req.params;
 
     if (!mailboxId || typeof mailboxId !== 'string' || mailboxId.trim().length === 0) {

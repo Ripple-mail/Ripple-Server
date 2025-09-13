@@ -17,6 +17,7 @@ import {
     bigint,
     jsonb
 } from 'drizzle-orm/pg-core';
+import { AuthenticatorTransportFuture } from '@simplewebauthn/server';
 
 export const themeOptions = pgEnum('theme', ['light', 'dark', 'system']);
 
@@ -45,6 +46,8 @@ export const actionTypes = pgEnum('action_types', [
     'password_reset_complete',
     'two_factor_enabled',
     'two_factor_disabled',
+    'device_added',
+    'device_trusted',
 
     // Emails
     'send_email',
@@ -63,6 +66,8 @@ export const actionTypes = pgEnum('action_types', [
     'apply_label',
     'remove_label'
 ]);
+
+export const userOtpTypes = pgEnum('user_otp_types', ['totp', 'hotp', 'backup']);
 
 const tsvector = customType<{ data: string; notNull: false; default: false; }>({
     dataType() {
@@ -83,7 +88,7 @@ export const users = pgTable('users', {
 }, (table) => [
     uniqueIndex('users_username_idx').on(table.username),
     uniqueIndex('users_email_idx').on(table.email),
-    index('active_users_idx').on(table.username).where(sql`deleted_at IS NULL AND is_active = true`)
+    index('active_users_idx').on(table.username).where(sql`deleted_at IS NULL AND is_active = true`),
 ]);
 
 export const userSettings = pgTable('user_settings', {
@@ -208,9 +213,96 @@ export const auditLogs = pgTable('audit_logs', {
     createdAt: timestamp('created_at').defaultNow()
 });
 
+export const devices = pgTable('devices', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    name: text('name'),
+    userAgent: text('user_agent'),
+    lastIp: inet('last_ip'),
+    deviceFingerprint: text('device_fingerprint'),
+    createdAt: timestamp('created_at').defaultNow(),
+    firstSeenAt: timestamp('first_seen_at').defaultNow(),
+    lastSeenAt: timestamp('last_seen_at'),
+    trusted: boolean('trusted').default(false).notNull(),
+    trusted_at: timestamp('trusted_at'),
+    revoked: boolean('revoked').default(false).notNull(),
+    revokedAt: timestamp('revoked_at'),
+    revokedReason: text('revoked_reason')
+}, (table) => [
+    index('devices_user_idx').on(table.userId),
+    uniqueIndex('devices_user_fingerprint_idx').on(table.userId, table.deviceFingerprint)
+]);
+
+export const sessions = pgTable('sessions', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    deviceId: uuid('device_id').references(() => devices.id, { onDelete: 'set null' }),
+    sessionTokenHash: text('session_token_hash').notNull().unique(),
+    ipAddress: inet('ip_address'),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at').defaultNow(),
+    lastActiveAt: timestamp('last_active_at'),
+    expiresAt: timestamp('expires_at').notNull(),
+}, (table) => [
+    uniqueIndex('sessions_token_hash_idx').on(table.sessionTokenHash),
+    index('sessions_user_idx').on(table.userId),
+    index('sessions_device_idx').on(table.deviceId),
+    index('sessions_active_idx').on(table.userId).where(sql`expires_at > now()`)
+]);
+
+export const refreshTokens = pgTable('refresh_tokens', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sessionId: uuid('sessionId').references(() => sessions.id, { onDelete: 'cascade' }).notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    createdAt: timestamp('created_at').defaultNow(),
+    createdByIp: inet('created_by_ip'),
+    replacedByTokenId: uuid('replaced_by_token_id'),
+    revoked: boolean('revoked').default(false).notNull(),
+    revokedAt: timestamp('revoked_at'),
+    revokedByIp: inet('revoked_by_ip'),
+    revokeReason: text('revoke_reason'),
+    lastUsedAt: timestamp('last_used_at'),
+    expiresAt: timestamp('expires_at').notNull()
+}, (table) => [
+    uniqueIndex('refresh_tokens_token_hash_idx').on(table.tokenHash),
+    index('refresh_tokens_hash_idx').on(table.tokenHash),
+    foreignKey({
+        name: 'refresh_tokens_replaced_fk',
+        columns: [table.replacedByTokenId],
+        foreignColumns: [table.id]
+    }).onDelete('set null'),
+    index('refresh_tokens_active_idx').on(table.sessionId).where(sql`revoked = false AND expires_at > now()`)
+]);
+
+export const userOtp = pgTable('user_otp', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id).notNull(),
+    secret: varchar('secret', { length: 128 }).notNull(),
+    confirmed: boolean('confirmed').default(false),
+    type: userOtpTypes('type').default('totp').notNull(),
+    createdAt: timestamp('created_at').defaultNow()
+}, (table) => [
+    index('user_otp_user_idx').on(table.userId),
+    uniqueIndex('user_otp_user_secret_idk').on(table.userId, table.secret)
+]);
 
 
-// RELATIONS //
+export const passkeys = pgTable('passkeys', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id).notNull(),
+    credentialId: varchar('credential_id', { length: 255 }).notNull().unique(),
+    publicKey: text('public_key').notNull(),
+    counter: bigint('counter', { mode: 'number' }).notNull(),
+    transports: jsonb('transports').$type<AuthenticatorTransportFuture[]>(),
+    createdAt: timestamp('created_at').defaultNow(),
+    lastUsedAt: timestamp('last_used_at')
+}, (table) => [
+    index('passkeys_user_idx').on(table.userId)
+]);
+
+
+
+//* RELATIONS *//
 //#region RELATIONS
 
 export const userRelations = relations(users, ({ many, one }) => ({
@@ -218,11 +310,15 @@ export const userRelations = relations(users, ({ many, one }) => ({
         fields: [users.id],
         references: [userSettings.userId]
     }),
+    devices: many(devices),
     mailboxes: many(mailboxes),
+    passkeys: many(passkeys),
     userEmails: many(userEmails),
     sentEmails: many(emails),
     recipients: many(recipients),
     auditLogs: many(auditLogs),
+    sessions: many(sessions),
+    userOtp: many(userOtp),
     labels: many(labels)
 }));
 
@@ -307,6 +403,51 @@ export const emailLabelRelations = relations(emailLabels, ({ one }) => ({
 export const auditLogRelations = relations(auditLogs, ({ one }) => ({
     user: one(users, {
         fields: [auditLogs.userId],
+        references: [users.id]
+    })
+}));
+
+export const deviceRelations = relations(devices, ({ many, one }) => ({
+    user: one(users, {
+        fields: [devices.userId],
+        references: [users.id]
+    }),
+    sessions: many(sessions)
+}));
+
+export const sessionRelations = relations(sessions, ({ one, many }) => ({
+    user: one(users, {
+        fields: [sessions.userId],
+        references: [users.id]
+    }),
+    device: one(devices, {
+        fields: [sessions.deviceId],
+        references: [devices.id]
+    }),
+    refreshTokens: many(refreshTokens)
+}));
+
+export const refreshTokenRelations = relations(refreshTokens, ({ one }) => ({
+    session: one(sessions, {
+        fields: [refreshTokens.sessionId],
+        references: [sessions.id]
+    }),
+    replacedByToken: one(refreshTokens, {
+        fields: [refreshTokens.replacedByTokenId],
+        references: [refreshTokens.id]
+    })
+}))
+
+export const userOtpRelations = relations(userOtp, ({ one }) => ({
+    user: one(users, {
+        fields: [userOtp.userId],
+        references: [users.id]
+    })
+}));
+
+export const passkeyRelations = relations(passkeys, ({ one }) => ({
+    user: one(users, {
+        fields: [passkeys.userId],
         references: [users.id]
     })
 }));

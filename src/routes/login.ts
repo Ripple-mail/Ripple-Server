@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { signJwt } from '../utils/jwt';
+import { createSessionAndRefresh } from '../utils/session';
 import { auditLogs, users, userSettings } from '../../db/schema';
 import { db } from '../../db/db';
 import { eq, or } from 'drizzle-orm';
@@ -8,7 +8,7 @@ import argon2 from 'argon2';
 const router: Router = express.Router();
 
 router.post('/', async (req, res) => {
-    const { identifier, password } = req.body;
+    const { identifier, password, deviceFingerprint } = req.body;
 
     if (!identifier || !password) {
         return res.status(400).json({ status: 'error', error: 'Email/username and password required' });
@@ -45,11 +45,11 @@ router.post('/', async (req, res) => {
             return res.status(401).json({ status: 'error', error: 'Invalid credentials' });
         }
 
-        if (usersSettings && usersSettings.mfaEnabled) {
+        if (usersSettings?.mfaEnabled) {
             return res.status(200).json({ status: 'mfa_required', methods: usersSettings.mfaMethods /* Send some kind of code that links with mfa to verify user login attempt on mfa */ });
         }
 
-        const token = signJwt({ id: user.id, username: user.username, email: user.email });
+        const { sessionToken, refreshToken, device } = await createSessionAndRefresh(user.id, req.audit.agent, req.audit.ipAddress || '', deviceFingerprint);
 
         await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
 
@@ -59,7 +59,8 @@ router.post('/', async (req, res) => {
             actionType: 'login',
             metadata: JSON.stringify({
                 method: 'password',
-                agent: req.audit.agent
+                agent: req.audit.agent,
+                deviceId: device.id
             }),
             ipAddress: req.audit.ipAddress
         });
@@ -67,14 +68,28 @@ router.post('/', async (req, res) => {
         const isWebBrowser = /Mozilla|Chrome|Safari|Edge/.test(req.audit.agent);
 
         if (isWebBrowser) {
-            res.cookie('jwt', token, {
+            res.cookie('session', sessionToken, {
                 httpOnly: true,
                 secure: true,
-                sameSite: 'none'
+                sameSite: 'strict'
+            });
+            res.cookie('refresh', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict'
             });
         }
 
-        return res.json({ status: 'success', message: 'Login successful', token });
+        return res.json({
+            status: 'success',
+            message: 'Login successful',
+            ...(isWebBrowser ? { sessionToken, refreshToken } : {}),
+            device: {
+                id: device.id,
+                trusted: device.trusted,
+                firstSeenAt: device.firstSeenAt
+            }
+        });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ status: 'error', error: 'Internal Server Error' });

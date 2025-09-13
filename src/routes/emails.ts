@@ -8,8 +8,6 @@ import { saveEmail } from '../utils/saveEmail';
 const router: Router = express.Router();
 
 router.get('/', authMiddleware, async (req, res) => {
-    if (!req.user) return;
-
     try {
         let mailboxIds: string[];
 
@@ -45,50 +43,8 @@ router.get('/', authMiddleware, async (req, res) => {
             }
 
             const prefixQuery = term.split(/\s+/).map(word => `${word}:*`).join(' & ');
-
-            const results = await db
-                .select({
-                    id: emails.id,
-                    subject: emails.subject,
-                    mailbox_id: userEmails.mailboxId,
-                    body_text: emails.bodyText,
-                    recipients: sql<string[]>`
-                        ARRAY(
-                            SELECT r.address
-                            FROM recipients r
-                            WHERE r.email_id = emails.id
-                        )
-                    `.as('recipients'),
-                    rank: sql<number>`
-                      ts_rank(${emails.searchVector}, websearch_to_tsquery('english', ${term}))
-                      + 0.5 * ts_rank(${emails.searchVector}, to_tsquery('english', ${prefixQuery}))
-                    `.as('rank')
-                })
-                .from(userEmails)
-                .leftJoin(emails, eq(userEmails.emailId, emails.id))
-                .where(
-                    and(
-                        eq(userEmails.userId, req.user.id),
-                        inArray(userEmails.mailboxId, mailboxIds),
-                        sql`
-                          (
-                            ${emails.searchVector} @@ websearch_to_tsquery('english', ${term})
-                            OR ${emails.searchVector} @@ to_tsquery('english', ${prefixQuery})
-                            OR emails.subject ILIKE '%' || ${term} || '%'
-                            OR emails.from_address ILIKE '%' || ${term} || '%'
-                            OR EXISTS (
-                              SELECT 1
-                              FROM recipients r
-                              WHERE r.email_id = emails.id
-                                AND r.address ILIKE '%' || ${term} || '%'
-                            )
-                          )
-                        `,
-                        isNull(userEmails.deletedAt)
-                    )
-                )
-                .groupBy(emails.id, userEmails.mailboxId)
-                .orderBy(sql`rank DESC`);
+            
+            const results = await preparedSearchQuery.execute({ userId: req.user.id, term, prefixQuery });
 
             return res.status(200).json({ status: 'success', data: results });
         } else {
@@ -118,8 +74,6 @@ router.get('/', authMiddleware, async (req, res) => {
 
 //? Currently only for changing mailbox, but could also be used to update label or something as well under the same route.
 router.patch('/', authMiddleware, async (req, res) => {
-    if (!req.user) return;
-    const user = req.user;
     const { ids, mailboxId } = req.body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
@@ -137,14 +91,14 @@ router.patch('/', authMiddleware, async (req, res) => {
                 .where(
                     and(
                         inArray(userEmails.id, ids),
-                        eq(userEmails.userId, user.id)
+                        eq(userEmails.userId, req.user.id)
                     )
                 )
                 .returning({ id: userEmails.id });
             
             if (result.length > 0) {
                 await tx.insert(auditLogs).values({
-                    userId: user.id,
+                    userId: req.user.id,
                     action: 'Emails moved successfully',
                     actionType: 'move_email',
                     metadata: JSON.stringify({
@@ -165,8 +119,6 @@ router.patch('/', authMiddleware, async (req, res) => {
 });
 
 router.delete('/', authMiddleware, async (req, res) => {
-    if (!req.user) return;
-    const user = req.user;
     const { ids } = req.body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
@@ -191,7 +143,7 @@ router.delete('/', authMiddleware, async (req, res) => {
                 .set({ deletedAt: new Date() })
                 .where(
                     and(
-                        eq(userEmails.userId, user.id),
+                        eq(userEmails.userId, req.user.id),
                         isNotNull(userEmails.deletedAt),
                         inArray(userEmails.id, ids),
                         eq(userEmails.mailboxId, trashMailbox.id)
@@ -204,7 +156,7 @@ router.delete('/', authMiddleware, async (req, res) => {
             }
 
             await tx.insert(auditLogs).values({
-                userId: user.id,
+                userId: req.user.id,
                 action: `Email${result.length > 1 ? 's' : ''} deleted successfully`,
                 actionType: 'delete_email',
                 metadata: JSON.stringify({
@@ -224,8 +176,6 @@ router.delete('/', authMiddleware, async (req, res) => {
 });
 
 router.get('/:emailId', authMiddleware, async (req, res) => {
-    if (!req.user) return res.status(401).json({ status: 'error', error: 'Unauthorized' });
-
     const { emailId } = req.params;
     console.log('EMAIL DEBUG: Fetching emailId:', emailId, 'for userId:', req.user.id);
 
@@ -260,7 +210,6 @@ router.get('/:emailId', authMiddleware, async (req, res) => {
 });
 
 router.post('/send', authMiddleware, async (req, res) => {
-    if (!req.user) return;
     const { from: sender, recipients, subject, body: bodyText } = req.body;
 
     try {
@@ -290,8 +239,6 @@ router.post('/send', authMiddleware, async (req, res) => {
 
 //? Currently only for changing mailbox, but could also be used to update label or something as well under the same route.
 router.patch('/:emailId', authMiddleware, async (req, res) => {
-    if (!req.user) return;
-    const user = req.user;
     const { emailId } = req.params;
     const { mailboxId } = req.body;
 
@@ -301,7 +248,7 @@ router.patch('/:emailId', authMiddleware, async (req, res) => {
 
     const emailMatch = and(
         eq(userEmails.emailId, emailId),
-        eq(userEmails.userId, user.id)
+        eq(userEmails.userId, req.user.id)
     );
     const now = new Date();
 
@@ -310,7 +257,7 @@ router.patch('/:emailId', authMiddleware, async (req, res) => {
             const mailbox = await tx.query.mailboxes.findFirst({
                 where: and(
                     eq(mailboxes.id, mailboxId),
-                    eq(mailboxes.userId, user.id)
+                    eq(mailboxes.userId, req.user.id)
                 )
             });
 
@@ -341,7 +288,7 @@ router.patch('/:emailId', authMiddleware, async (req, res) => {
             }
 
             await tx.insert(auditLogs).values({
-                userId: user.id,
+                userId: req.user.id,
                 action: 'Email moved successfully',
                 actionType: 'move_email' ,
                 metadata: JSON.stringify({
@@ -360,8 +307,6 @@ router.patch('/:emailId', authMiddleware, async (req, res) => {
 });
 
 router.delete('/:emailId', authMiddleware, async (req, res) => {
-    if (!req.user) return;
-    const user = req.user;
     const { emailId } = req.params;
 
     try {
@@ -385,7 +330,7 @@ router.delete('/:emailId', authMiddleware, async (req, res) => {
                 .where(
                     and(
                         eq(userEmails.id, emailId),
-                        eq(userEmails.userId, user.id),
+                        eq(userEmails.userId, req.user.id),
                         isNull(userEmails.deletedAt)
                     )
                 )
@@ -396,7 +341,7 @@ router.delete('/:emailId', authMiddleware, async (req, res) => {
             }
 
             await tx.insert(auditLogs).values({
-                userId: user.id,
+                userId: req.user.id,
                 action: 'Email deleted successfully',
                 actionType: 'delete_email',
                 metadata: JSON.stringify({
@@ -415,5 +360,50 @@ router.delete('/:emailId', authMiddleware, async (req, res) => {
         return res.status(500).json({ status: 'error', error: 'Internal Server Error' });
     }
 });
+
+const preparedSearchQuery = db
+    .select({
+        id: emails.id,
+        subject: emails.subject,
+        mailboxes: userEmails.mailboxId,
+        body_text: emails.bodyText,
+        recipients: sql<string[]>`
+            ARRAY(
+                SELECT r.address
+                FROM recipients r
+                WHERE r.email_id = emails.id
+            )
+        `.as('recipients'),
+        rank: sql<number>`
+          ts_rank(${emails.searchVector}, websearch_to_tsquery('english', ${sql.placeholder('term')}))
+          + 0.5 * ts_rank(${emails.searchVector}, to_tsquery('english', ${sql.placeholder('prefixQuery')}))
+        `
+    })
+    .from(userEmails)
+    .leftJoin(emails, eq(userEmails.emailId, emails.id))
+    .where(
+        and(
+            eq(userEmails.userId, sql.placeholder('userId')),
+            inArray(userEmails.mailboxId, sql.placeholder('mailboxIds')),
+            sql`
+              (
+                ${emails.searchVector} @@ websearch_to_tsquery('english', ${sql.placeholder('term')})
+                OR ${emails.searchVector} @@ to_tsquery('english', ${sql.placeholder('prefixQuery')})
+                OR emails.subject ILIKE '%' || ${sql.placeholder('term')} || '%'
+                OR emails.from_address ILIKE '%' || ${sql.placeholder('term')} || '%'
+                OR EXISTS (
+                    SELECT 1
+                    FROM recipients r
+                    WHERE r.email_id = emails.id
+                    AND r.address ILIKE '%' || ${sql.placeholder('term')} || '%'
+                )
+              )
+            `,
+            isNull(userEmails.deletedAt)
+        )
+    )
+    .groupBy(emails.id, userEmails.mailboxId)
+    .orderBy(sql`rank DEC`)
+    .prepare('email_query_search');
 
 export default router;
