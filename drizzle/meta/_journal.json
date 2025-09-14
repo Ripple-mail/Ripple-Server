@@ -50,6 +50,13 @@
       "when": 1756946996224,
       "tag": "0006_auto_del_trashed_emls",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1757837555161,
+      "tag": "0007_zippy_firebrand",
+      "breakpoints": true
     }
   ]
 }
