@@ -66,6 +66,7 @@ router.post('/', async (req, res) => {
         });
 
         const isWebBrowser = /Mozilla|Chrome|Safari|Edge/.test(req.audit.agent);
+        const isFlutterApp = /Dart\/\d+\.\d+(\.\d+)?/.test(req.audit.agent);
 
         if (isWebBrowser) {
             res.cookie('session', sessionToken, {
@@ -80,10 +81,12 @@ router.post('/', async (req, res) => {
             });
         }
 
+        const shouldSendTokens = isWebBrowser || isFlutterApp;
+
         return res.json({
             status: 'success',
             message: 'Login successful',
-            ...(isWebBrowser ? { sessionToken, refreshToken } : {}),
+            ...(shouldSendTokens ? { sessionToken, refreshToken } : {}),
             device: {
                 id: device.id,
                 trusted: device.trusted,
