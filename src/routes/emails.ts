@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { db } from '../../db/db';
-import { eq, inArray, sql, and, isNull, isNotNull } from 'drizzle-orm';
+import { eq, inArray, sql, and, isNull, isNotNull, getTableColumns } from 'drizzle-orm';
 import { auditLogs, emails, mailboxes, userEmails } from '../../db/schema';
 import { saveEmail } from '../utils/saveEmail';
 
@@ -361,49 +361,40 @@ router.delete('/:emailId', authMiddleware, async (req, res) => {
     }
 });
 
-const preparedSearchQuery = db
-    .select({
-        id: emails.id,
-        subject: emails.subject,
-        mailboxes: userEmails.mailboxId,
-        body_text: emails.bodyText,
-        recipients: sql<string[]>`
-            ARRAY(
-                SELECT r.address
+const preparedSearchQuery = db.query.userEmails.findMany({
+    with: {
+        email: {
+            with: {
+                recipients: true
+            }
+        }
+    },
+    extras: {
+        rank: sql<number>`
+            ts_rank(${emails.searchVector}, websearch_to_tsquery('english', ${sql.placeholder('term')}))
+            + 0.5 * ts_rank(${emails.searchVector}, to_tsquery('english', ${sql.placeholder('prefixQuery')}))
+        `.as('rank')
+    },
+    where: and(
+        eq(userEmails.userId, sql.placeholder('userId')),
+        inArray(userEmails.mailboxId, sql.placeholder('mailboxIds')),
+        sql`
+            (
+            ${emails.searchVector} @@ websearch_to_tsquery('english', ${sql.placeholder('term')})
+            OR ${emails.searchVector} @@ to_tsquery('english', ${sql.placeholder('prefixQuery')})
+            OR emails.subject ILIKE '%' || ${sql.placeholder('term')} || '%'
+            OR emails.from_address ILIKE '%' || ${sql.placeholder('term')} || '%'
+            OR EXISTS (
+                SELECT 1
                 FROM recipients r
                 WHERE r.email_id = emails.id
+                AND r.address ILIKE '%' || ${sql.placeholder('term')} || '%'
             )
-        `.as('recipients'),
-        rank: sql<number>`
-          ts_rank(${emails.searchVector}, websearch_to_tsquery('english', ${sql.placeholder('term')}))
-          + 0.5 * ts_rank(${emails.searchVector}, to_tsquery('english', ${sql.placeholder('prefixQuery')}))
-        `
-    })
-    .from(userEmails)
-    .leftJoin(emails, eq(userEmails.emailId, emails.id))
-    .where(
-        and(
-            eq(userEmails.userId, sql.placeholder('userId')),
-            inArray(userEmails.mailboxId, sql.placeholder('mailboxIds')),
-            sql`
-              (
-                ${emails.searchVector} @@ websearch_to_tsquery('english', ${sql.placeholder('term')})
-                OR ${emails.searchVector} @@ to_tsquery('english', ${sql.placeholder('prefixQuery')})
-                OR emails.subject ILIKE '%' || ${sql.placeholder('term')} || '%'
-                OR emails.from_address ILIKE '%' || ${sql.placeholder('term')} || '%'
-                OR EXISTS (
-                    SELECT 1
-                    FROM recipients r
-                    WHERE r.email_id = emails.id
-                    AND r.address ILIKE '%' || ${sql.placeholder('term')} || '%'
-                )
-              )
-            `,
-            isNull(userEmails.deletedAt)
-        )
-    )
-    .groupBy(emails.id, userEmails.mailboxId)
-    .orderBy(sql`rank DEC`)
-    .prepare('email_query_search');
+            )
+        `,
+        isNull(userEmails.deletedAt)
+    ),
+    orderBy: sql`rank DEC`
+}).prepare('email_query_search');
 
 export default router;
