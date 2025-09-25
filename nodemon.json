@@ -6,8 +6,8 @@
         "node_modules",
         ".git",
         "drizzle",
-        "drizzle.confit.ts"
+        "drizzle.config.ts"
     ],
     "delay": 200,
-    "exec": "ts-node --transpile-only --swc src/index.ts"
+    "exec": "tsx src/index.ts"
 }

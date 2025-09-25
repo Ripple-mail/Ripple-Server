@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { validateSession } from '../utils/session';
-import { db } from '$db$db';
+import { db } from '$db/db';
 import { users } from '$db/schema';
 import { eq } from 'drizzle-orm';
 
