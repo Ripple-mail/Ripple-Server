@@ -2,8 +2,8 @@ import express, { Router } from 'express';
 import { authMiddleware } from '../../middleware/auth';
 import { authenticator } from 'otplib';
 import qrcode from 'qrcode';
-import { userOtp, userSettings } from '../../../db/schema';
-import { db } from '../../../db/db';
+import { userOtp, userSettings } from '$db/schema';
+import { db } from '$db/db';
 import { eq, sql } from 'drizzle-orm';
 
 const router: Router = express.Router();

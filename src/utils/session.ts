@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import { db } from '../../db/db';
-import { sessions, refreshTokens } from '../../db/schema';
+import { db } from '$db/db';
+import { sessions, refreshTokens } from '$db/schema';
 import { getOrCreateDevice } from './devices';
 import { and, eq, gt } from 'drizzle-orm';
 

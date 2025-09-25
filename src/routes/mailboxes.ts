@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
-import { db } from '../../db/db';
-import { mailboxes, auditLogs } from '../../db/schema';
+import { db } from '$db/db';
+import { mailboxes, auditLogs } from '$db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
 
 const router: Router = express.Router();

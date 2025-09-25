@@ -1,6 +1,6 @@
 import express, { Router } from 'express';
-import { db } from '../../db/db';
-import { auditLogs } from '../../db/schema';
+import { db } from '$db/db';
+import { auditLogs } from '$db/schema';
 import { authMiddleware } from '../middleware/auth';
 
 const router: Router = express.Router();

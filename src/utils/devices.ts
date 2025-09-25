@@ -1,5 +1,5 @@
-import { db } from '../../db/db';
-import { auditLogs, devices } from '../../db/schema';
+import { db } from '$db/db';
+import { auditLogs, devices } from '$db/schema';
 import { eq, and } from 'drizzle-orm';
 
 export async function getOrCreateDevice(userId: string, userAgent: string, ip: string, fingerprint?: string) {

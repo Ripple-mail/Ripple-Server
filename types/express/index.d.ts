@@ -1,5 +1,5 @@
 import 'express';
-import { sessions, users } from '../../db/schema';
+import { sessions, users } from '$db/schema';
 
 export interface AuditOptions {
     agent: string;

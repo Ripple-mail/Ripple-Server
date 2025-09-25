@@ -2,8 +2,8 @@ import express, { Router } from 'express';
 import { generateAuthenticationOptions, verifyAuthenticationResponse, generateRegistrationOptions, verifyRegistrationResponse } from '@simplewebauthn/server';
 import { origin, rpID, rpName } from '../../utils/webauthn';
 import { eq, sql } from 'drizzle-orm';
-import { db } from '../../../db/db';
-import { passkeys, users, userSettings } from '../../../db/schema';
+import { db } from '$db/db';
+import { passkeys, users, userSettings } from '$db/schema';
 import { authenticationChallengeMap, registrationChallengeMap } from '../../utils/challengeStore';
 import { authMiddleware } from '../../middleware/auth';
 

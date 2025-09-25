@@ -1,8 +1,8 @@
 import express, { Router } from 'express';
 import { authMiddleware } from '../middleware/auth';
-import { db } from '../../db/db';
-import { eq, inArray, sql, and, isNull, isNotNull, getTableColumns } from 'drizzle-orm';
-import { auditLogs, emails, mailboxes, userEmails } from '../../db/schema';
+import { db } from '$db/db';
+import { eq, inArray, sql, and, isNull, isNotNull } from 'drizzle-orm';
+import { auditLogs, emails, mailboxes, userEmails } from '$db/schema';
 import { saveEmail } from '../utils/saveEmail';
 
 const router: Router = express.Router();

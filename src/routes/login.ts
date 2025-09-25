@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
 import { createSessionAndRefresh } from '../utils/session';
-import { auditLogs, users, userSettings } from '../../db/schema';
-import { db } from '../../db/db';
+import { auditLogs, users, userSettings } from '$db/schema';
+import { db } from '$db/db';
 import { eq, or } from 'drizzle-orm';
 import argon2 from 'argon2';
 

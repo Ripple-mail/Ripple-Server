@@ -1,8 +1,8 @@
 import express, { Router } from 'express';
 import argon2 from 'argon2';
-import { db } from '../../db/db';
+import { db } from '$db/db';
 import { eq, or } from 'drizzle-orm';
-import { users, mailboxes, auditLogs } from '../../db/schema';
+import { users, mailboxes, auditLogs } from '$db/schema';
 
 const router: Router = express.Router();
 
