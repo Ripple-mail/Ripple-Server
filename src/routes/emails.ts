@@ -9,6 +9,9 @@ const router: Router = express.Router();
 
 router.get('/', authMiddleware, async (req, res) => {
     try {
+        let pageSize = Number(req.query.pageSize) || 50;
+        let page = Number(req.query.page) || 1;
+
         let mailboxIds: string[];
 
         if (!req.query.mailboxId) {
@@ -44,7 +47,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
             const prefixQuery = term.split(/\s+/).map(word => `${word}:*`).join(' & ');
             
-            const results = await preparedSearchQuery.execute({ userId: req.user.id, term, prefixQuery });
+            const results = await preparedSearchQuery.execute({ userId: req.user.id, term, prefixQuery, pageSize, page });
 
             return res.status(200).json({ status: 'success', data: results });
         } else {
@@ -61,7 +64,9 @@ router.get('/', authMiddleware, async (req, res) => {
                         }
                     }
                 },
-                orderBy: (emails, { asc }) => [asc(emails.createdAt)]
+                orderBy: (emails, { asc }) => [asc(emails.createdAt)],
+                limit: pageSize,
+                offset: pageSize * page
             });
 
             return res.status(200).json({ status: 'success', data: userMailboxEmails });
@@ -394,7 +399,9 @@ const preparedSearchQuery = db.query.userEmails.findMany({
         `,
         isNull(userEmails.deletedAt)
     ),
-    orderBy: sql`rank DEC`
+    orderBy: sql`rank DEC`,
+    limit: sql.placeholder('pageSize'),
+    offset: Number(sql.placeholder('page')) * Number(sql.placeholder('pageSize'))
 }).prepare('email_query_search');
 
 export default router;
