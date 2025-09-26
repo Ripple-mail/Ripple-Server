@@ -3,7 +3,7 @@ import { generateAuthenticationOptions, verifyAuthenticationResponse, generateRe
 import { origin, rpID, rpName } from '../../utils/webauthn';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '$db/db';
-import { passkeys, users, userSettings } from '$db/schema';
+import { passkeys, userSettings } from '$db/schema';
 import { authenticationChallengeMap, registrationChallengeMap } from '../../utils/challengeStore';
 import { authMiddleware } from '../../middleware/auth';
 

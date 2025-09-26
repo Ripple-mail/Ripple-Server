@@ -69,11 +69,19 @@ export const actionTypes = pgEnum('action_types', [
 
 export const userOtpTypes = pgEnum('user_otp_types', ['totp', 'hotp', 'backup']);
 
+export const inboxTypeTypes = pgEnum('inbox_type', ['Default', 'Important first', 'Unread first', 'Starred first']);
+
 const tsvector = customType<{ data: string; notNull: false; default: false; }>({
     dataType() {
         return 'tsvector';
     }
 });
+
+type DefaultTextStyle = {
+    font: 'Sans Serif' | 'Serif' | 'Fixed Width' | 'Wide' | 'Narrow' | 'Comic Sans MS' | 'Garamond' | 'Georgia' | 'Tahoma' | 'Trebuchet MS' | 'Verdana';
+    size: 'Small' | 'Normal' | 'Large' | 'Huge';
+    color: `#${string}`;
+}
 
 export const users = pgTable('users', {
     id: uuid('id').defaultRandom().primaryKey(),
@@ -97,6 +105,11 @@ export const userSettings = pgTable('user_settings', {
     // UI/Gen
     theme: themeOptions().default('light').notNull(),
     language: text('language').default('en').notNull(),
+    maxPageSize: integer('max_page_size').default(50).notNull(),
+    undoSend: integer('undo_send').default(5).notNull(),
+    defaultTextStyle: jsonb('default_text_style').notNull().$type<DefaultTextStyle>().default({ font: 'Sans Serif', size: 'Normal', color: '#000000' }),
+    inboxType: inboxTypeTypes().notNull().default('Default'),
+    readingPane: boolean('reading_pane').default(false).notNull(),
 
     // MFA
     mfaEnabled: boolean('mfa_enabled').default(false).notNull(),

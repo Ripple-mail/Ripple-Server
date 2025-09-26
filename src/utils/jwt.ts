@@ -1,7 +1,9 @@
 import jwt, { SignOptions, JwtPayload } from 'jsonwebtoken';
-import type { JwtUser } from '../../types/express';
+import { users } from '$db/schema';
 
 const SECRET = process.env.JWT_SECRET || 'super-secret-key';
+
+type JwtUser = typeof users.$inferSelect;
 
 export function signJwt(payload: JwtUser, expiresIn: SignOptions['expiresIn'] = '2h') {
     return jwt.sign(payload, SECRET, { expiresIn });

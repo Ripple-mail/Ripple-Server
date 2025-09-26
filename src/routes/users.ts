@@ -12,7 +12,10 @@ router.get('/self', authMiddleware, async (req, res) => {
             where: and(
                 eq(users.id, req.user.id),
                 isNull(users.deletedAt)
-            )
+            ),
+            columns: {
+                passwordHash: false
+            }
         });
 
         return res.json({ status: 'success', user });

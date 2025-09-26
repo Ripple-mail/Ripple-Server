@@ -20,7 +20,9 @@
 		"dev:fast": "tsx src/index.ts",
 		"build": "tsc",
 		"build:watch": "tsc --watch",
-		"start": "node dist/index.js"
+		"start": "node dist/src/index.js",
+		"check": "tsc --noEmit",
+		"check:watch": "tsc --noEmit --watch"
 	},
 	"devDependencies": {
 		"@swc/core": "^1.13.3",
